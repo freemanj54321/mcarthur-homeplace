@@ -1,7 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Polaroid } from '@/components/ui/Polaroid'
-import { HeroFacts } from './HeroFacts'
 
 export function HeroCollage() {
   return (
@@ -32,14 +31,13 @@ export function HeroCollage() {
               </div>
             </div>
             <div style={{ position: 'absolute', top: '38%', right: 0, width: '50%', zIndex: 2 }}>
-              <Polaroid label="Smokehouse — log siding" caption="Smokehouse, mended" aspect="photo" rotate={4} />
+              <Polaroid label="Old-growth long-leaf pine" caption="Old-growth pines" aspect="photo" rotate={4} />
             </div>
             <div style={{ position: 'absolute', bottom: 0, left: 0, width: '46%', zIndex: 1 }}>
               <Polaroid label="Cemetery iron gate detail" caption="Iron gate, 1897" aspect="square" rotate={-2} />
             </div>
           </div>
         </div>
-        <HeroFacts />
       </div>
     </section>
   )

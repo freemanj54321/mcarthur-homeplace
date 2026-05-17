@@ -364,29 +364,45 @@ main.page { flex: 1 0 auto; }
 .mobile-nav { display: none; }
 
 @media (max-width: 960px) {
-  .header-utility-inner { padding: 7px 18px; }
-  .utility-link { font-size: 10.5px; letter-spacing: 0.12em; }
+  /* Utility row: hide "Plan a Visit", keep Donate pushed to the right */
+  .header-utility-inner { padding: 6px 18px; justify-content: flex-end; }
+  .utility-link { display: none; }
   .utility-cta  { font-size: 10.5px; letter-spacing: 0.12em; padding: 5px 12px; }
 
+  /* Main row: logo on the LEFT, hamburger on the RIGHT */
   .header-main-inner {
-    grid-template-columns: 44px 1fr 44px;
+    grid-template-columns: 1fr auto;
     padding: 12px 18px;
     gap: 16px;
   }
   .nav-left, .nav-right { display: none; }
-  .mobile-toggle { display: grid; place-items: center; justify-self: start; }
-  .brand { justify-content: center; }
+  .brand { justify-content: flex-start; }
+  .mobile-toggle { display: grid; place-items: center; justify-self: end; }
 
   .mobile-nav.open {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 18px;
-    padding: 24px;
+    align-items: stretch;
+    gap: 0;
+    padding: 8px 0;
     background: var(--c-bg);
     border-bottom: 1px solid var(--c-line-soft);
   }
-  .mobile-nav.open .nav-link { font-size: 18px; font-family: var(--f-display); text-transform: none; letter-spacing: 0; }
+  .mobile-nav.open .nav-link {
+    font-size: 17px;
+    font-family: var(--f-display);
+    text-transform: none;
+    letter-spacing: 0;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--c-line-soft);
+  }
+  .mobile-nav.open .nav-link.active::after { display: none; }
+  .mobile-nav.open .nav-link.active { color: var(--c-primary); }
+  .mobile-nav.open .nav-cta {
+    margin: 16px 24px 8px;
+    text-align: center;
+    padding: 12px 18px;
+  }
 }
 
 /* ============================================================
@@ -686,7 +702,7 @@ a:hover .arrow, .btn:hover .arrow { transform: translateX(4px); }
 
   /* Header & footer tightening */
   .header-main-inner { padding: 12px 18px !important; }
-  .brand-logo { height: 72px !important; }
+  .brand-logo { height: 64px !important; }
   .footer-inner { padding: 0 18px 24px !important; }
   .footer-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
   .footer-bottom { flex-direction: column; align-items: flex-start; }
@@ -739,6 +755,5 @@ a:hover .arrow, .btn:hover .arrow { transform: translateX(4px); }
   [style*="repeat(5, 1fr)"] > div > div:last-child { display: none; }
   .btn-lg { padding: 12px 18px !important; font-size: 13px !important; }
   .nav-cta { padding: 6px 12px !important; font-size: 12px !important; }
-  .brand-logo { height: 60px !important; }
-  .utility-link { display: none; }
+  .brand-logo { height: 52px !important; }
 }

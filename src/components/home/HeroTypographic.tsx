@@ -1,6 +1,4 @@
 import Link from 'next/link'
-import { TartanRule } from '@/components/ui/TartanRule'
-import { HeroFacts } from './HeroFacts'
 
 export function HeroTypographic() {
   return (
@@ -34,8 +32,6 @@ export function HeroTypographic() {
             </Link>
           </div>
         </div>
-        <TartanRule style={{ marginTop: 80 }} />
-        <HeroFacts />
       </div>
     </section>
   )

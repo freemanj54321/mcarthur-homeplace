@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { HeroFacts } from './HeroFacts'
 
 export function HeroPhoto() {
   return (
@@ -43,9 +42,6 @@ export function HeroPhoto() {
             </div>
           </div>
         </div>
-      </div>
-      <div className="container-wide">
-        <HeroFacts />
       </div>
     </section>
   )
