@@ -124,7 +124,7 @@ export function TweaksPanel() {
   return (
     <>
       <style>{STYLE}</style>
-      <div ref={dragRef} className="twk-panel" style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+      <div ref={dragRef} className="twk-panel">
         <div className="twk-hd" onMouseDown={onDragStart}>
           <b>Design Options</b>
           <button className="twk-x" aria-label="Close" onMouseDown={(e) => e.stopPropagation()} onClick={dismiss}>✕</button>

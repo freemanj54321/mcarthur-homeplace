@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { Project } from '@/data/content'
 import { ProjectCard } from '@/components/ui/ProjectCard'
 import { DonateStrip } from '@/components/ui/DonateStrip'
