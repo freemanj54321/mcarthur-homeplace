@@ -1,0 +1,9 @@
+#!/bin/sh
+# Updates the "Last Updated" date in ONBOARDING.md on every commit.
+TODAY=$(date +"%Y-%m-%d")
+FILE="ONBOARDING.md"
+
+if [ -f "$FILE" ]; then
+  sed -i "s/^> Last Updated: .*/> Last Updated: $TODAY/" "$FILE"
+  git add "$FILE"
+fi

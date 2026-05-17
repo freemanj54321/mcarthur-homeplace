@@ -33,7 +33,7 @@ interface ProjectCardProps {
 export function ProjectCard({ project: p, layout = 'classic' }: ProjectCardProps) {
   if (layout === 'overlay') {
     return (
-      <Link href={`/projects/${p.slug}`} style={{ position: 'relative', display: 'block', overflow: 'hidden', minHeight: 460 }}>
+      <Link href={`/what-to-see/${p.slug}`} style={{ position: 'relative', display: 'block', overflow: 'hidden', minHeight: 460 }}>
         <ProjectImage project={p} aspect="portrait" />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(20,17,13,0.85) 0%, rgba(20,17,13,0.45) 50%, transparent 80%)' }} />
         <div style={{ position: 'absolute', top: 18, left: 18, background: 'var(--tartan-gold)', color: 'var(--tartan-ink)', padding: '4px 10px', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700 }}>{p.kind}</div>
@@ -47,7 +47,7 @@ export function ProjectCard({ project: p, layout = 'classic' }: ProjectCardProps
   }
   if (layout === 'split') {
     return (
-      <Link href={`/projects/${p.slug}`} style={{ display: 'grid', gridTemplateColumns: '320px 1fr auto', gap: 28, padding: '28px 32px', background: 'var(--c-surface)', border: '1px solid var(--c-line-soft)', alignItems: 'center' }}>
+      <Link href={`/what-to-see/${p.slug}`} style={{ display: 'grid', gridTemplateColumns: '320px 1fr auto', gap: 28, padding: '28px 32px', background: 'var(--c-surface)', border: '1px solid var(--c-line-soft)', alignItems: 'center' }}>
         <ProjectImage project={p} aspect="photo" />
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
@@ -66,7 +66,7 @@ export function ProjectCard({ project: p, layout = 'classic' }: ProjectCardProps
   }
   // classic
   return (
-    <Link href={`/projects/${p.slug}`} style={{ background: 'var(--c-surface)', border: '1px solid var(--c-line-soft)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <Link href={`/what-to-see/${p.slug}`} style={{ background: 'var(--c-surface)', border: '1px solid var(--c-line-soft)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ position: 'relative' }}>
         <ProjectImage project={p} aspect="photo" />
         <div style={{ position: 'absolute', top: 14, left: 14, background: 'var(--c-surface)', color: 'var(--c-primary)', padding: '4px 10px', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700 }}>{p.kind}</div>

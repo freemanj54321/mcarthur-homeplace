@@ -180,7 +180,7 @@ function StepThanks({ amount, matched, info }: { amount: number; matched: number
         Your gift of <strong>${amount.toLocaleString()}</strong> will be matched to <strong>${matched.toLocaleString()}</strong> by year end. A receipt is on its way to your inbox.
       </p>
       <div style={{ marginTop: 40, display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <Link href="/projects" className="btn btn-primary">See the work →</Link>
+        <Link href="/what-to-see" className="btn btn-primary">See the work →</Link>
         <Link href="/" className="btn btn-outline">Back to home</Link>
       </div>
     </div>

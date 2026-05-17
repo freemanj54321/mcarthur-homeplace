@@ -24,7 +24,7 @@ export function Footer() {
             <h4>Explore</h4>
             <ul>
               <li><Link href="/about">Our Story</Link></li>
-              <li><Link href="/projects">Restoration Projects</Link></li>
+              <li><Link href="/what-to-see">What to See</Link></li>
               <li><Link href="/stories">Stories &amp; News</Link></li>
               <li><Link href="/visit">Plan a Visit</Link></li>
             </ul>

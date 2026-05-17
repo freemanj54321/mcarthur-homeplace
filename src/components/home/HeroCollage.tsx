@@ -19,7 +19,7 @@ export function HeroCollage() {
             </p>
             <div style={{ display: 'flex', gap: 12, marginTop: 32, flexWrap: 'wrap' }}>
               <Link href="/about" className="btn btn-primary btn-lg">Read our story <span className="arrow">→</span></Link>
-              <Link href="/projects" className="btn btn-ghost">See current projects</Link>
+              <Link href="/what-to-see" className="btn btn-ghost">What to See</Link>
             </div>
           </div>
           <div style={{ position: 'relative', minHeight: 520 }}>

@@ -7,7 +7,7 @@ import { BrandMark } from './BrandMark'
 
 const NAV_LINKS = [
   { name: 'About',    href: '/about' },
-  { name: 'Projects', href: '/projects' },
+  { name: 'What to See', href: '/what-to-see' },
   { name: 'Stories',  href: '/stories' },
   { name: 'Visit',    href: '/visit' },
 ]

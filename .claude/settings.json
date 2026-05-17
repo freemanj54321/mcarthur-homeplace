@@ -24,7 +24,12 @@
       "Bash(git push *)",
       "Bash(npx tsc *)",
       "Bash(gcloud projects *)",
-      "Bash(gcloud iam *)"
+      "Bash(gcloud iam *)",
+      "Bash(git config *)",
+      "Bash(Move-Item \"c:\\\\Users\\\\freem\\\\Dev\\\\mcarthur-homeplace\\\\src\\\\app\\\\projects\" \"c:\\\\Users\\\\freem\\\\Dev\\\\mcarthur-homeplace\\\\src\\\\app\\\\what-to-see\")",
+      "Read(//c/Users/freem/Dev/**)",
+      "Bash(eslint)",
+      "Bash(prettier\")"
     ]
   }
 }

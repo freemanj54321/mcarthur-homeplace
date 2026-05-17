@@ -58,7 +58,7 @@ export function ProjectDetailPage({ project: p, others }: { project: Project; ot
     <main className="page fade-in">
       <section style={{ paddingTop: 56, paddingBottom: 32 }}>
         <div className="container">
-          <Link href="/projects" className="muted" style={{ fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase' }}>← The Homeplace</Link>
+          <Link href="/what-to-see" className="muted" style={{ fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase' }}>← The Homeplace</Link>
           <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 56, alignItems: 'end', marginTop: 32 }}>
             <div>
               <div className="dateline">{p.built} · {p.kind}</div>

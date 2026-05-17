@@ -33,7 +33,7 @@ export function HeroPhoto() {
                 stories that hold them together — and opening it, slowly, to the people it belonged to all along.
               </p>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <Link href="/projects" className="btn btn-lg" style={{ background: 'var(--tartan-gold)', color: 'var(--tartan-ink)', borderColor: 'var(--tartan-gold)' }}>
+                <Link href="/what-to-see" className="btn btn-lg" style={{ background: 'var(--tartan-gold)', color: 'var(--tartan-ink)', borderColor: 'var(--tartan-gold)' }}>
                   See the work <span className="arrow">→</span>
                 </Link>
                 <Link href="/about" className="btn btn-lg" style={{ background: 'rgba(251,247,238,0.10)', backdropFilter: 'blur(8px)', color: 'var(--tartan-cream)', borderColor: 'rgba(251,247,238,0.45)' }}>

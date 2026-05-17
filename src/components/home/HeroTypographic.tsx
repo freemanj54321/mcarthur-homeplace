@@ -23,8 +23,8 @@ export function HeroTypographic() {
             is matched by the State Historical Commission.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Link href="/projects" className="btn btn-primary btn-lg" style={{ justifyContent: 'space-between' }}>
-              <span>The four projects</span> <span className="arrow">→</span>
+            <Link href="/what-to-see" className="btn btn-primary btn-lg" style={{ justifyContent: 'space-between' }}>
+              <span>What to See</span> <span className="arrow">→</span>
             </Link>
             <Link href="/about" className="btn btn-outline btn-lg" style={{ justifyContent: 'space-between' }}>
               <span>The full history</span> <span className="arrow">→</span>

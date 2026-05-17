@@ -14,7 +14,7 @@ export function ProjectsTeaser() {
       <div className="container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 24, marginBottom: 56 }}>
           <SectionHead eyebrow="Current restoration" title="Four buildings, <em>one slow act of repair.</em>" />
-          <Link href="/projects" className="btn-ghost btn">All projects <span className="arrow">→</span></Link>
+          <Link href="/what-to-see" className="btn-ghost btn">What to See <span className="arrow">→</span></Link>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: tweaks.cardLayout === 'split' ? '1fr' : 'repeat(3, 1fr)', gap: tweaks.cardLayout === 'split' ? 24 : 32 }}>
           {items.map((p) => <ProjectCard key={p.id} project={p} layout={tweaks.cardLayout} />)}

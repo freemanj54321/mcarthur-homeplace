@@ -15,7 +15,7 @@ export default function StoriesPage() {
         </p>
         <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
           <Link href="/" className="btn btn-primary">Back home →</Link>
-          <Link href="/projects" className="btn btn-outline">See the projects</Link>
+          <Link href="/what-to-see" className="btn btn-outline">What to See</Link>
         </div>
       </div>
     </main>
