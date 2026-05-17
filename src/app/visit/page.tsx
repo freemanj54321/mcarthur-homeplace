@@ -19,8 +19,8 @@ export default function VisitPage() {
           {events.map((e) => (
             <div key={e.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 24, padding: '24px 0', borderBottom: '1px solid var(--c-line-soft)', textAlign: 'left' }}>
               <div>
-                <div className="display" style={{ fontSize: 36, lineHeight: 1, fontStyle: 'italic', color: 'var(--c-primary)' }}>{new Date(e.date).getDate()}</div>
-                <div className="dateline" style={{ marginTop: 4 }}>{new Date(e.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</div>
+                <div className="display" style={{ fontSize: 36, lineHeight: 1, fontStyle: 'italic', color: 'var(--c-primary)' }}>{new Date(e.date).getUTCDate()}</div>
+                <div className="dateline" style={{ marginTop: 4 }}>{new Date(e.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}</div>
               </div>
               <div>
                 <h3 className="h-card" style={{ fontSize: 20 }}>{e.title}</h3>

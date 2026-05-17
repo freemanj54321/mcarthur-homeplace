@@ -24,9 +24,9 @@ export function VisitInvite() {
             {items.map((e) => (
               <div key={e.id} style={{ display: 'grid', gridTemplateColumns: '110px 1fr auto', alignItems: 'center', gap: 24, padding: '24px 0', borderBottom: '1px solid rgba(251,247,238,0.15)' }}>
                 <div>
-                  <div className="display" style={{ fontSize: 36, lineHeight: 1, fontWeight: 400, color: 'var(--tartan-gold)' }}>{new Date(e.date).getDate()}</div>
+                  <div className="display" style={{ fontSize: 36, lineHeight: 1, fontWeight: 400, color: 'var(--tartan-gold)' }}>{new Date(e.date).getUTCDate()}</div>
                   <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: 6, color: 'rgba(251,247,238,0.65)' }}>
-                    {new Date(e.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    {new Date(e.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}
                   </div>
                 </div>
                 <div>
