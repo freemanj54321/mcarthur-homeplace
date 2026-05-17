@@ -29,7 +29,8 @@
       "Bash(Move-Item \"c:\\\\Users\\\\freem\\\\Dev\\\\mcarthur-homeplace\\\\src\\\\app\\\\projects\" \"c:\\\\Users\\\\freem\\\\Dev\\\\mcarthur-homeplace\\\\src\\\\app\\\\what-to-see\")",
       "Read(//c/Users/freem/Dev/**)",
       "Bash(eslint)",
-      "Bash(prettier\")"
+      "Bash(prettier\")",
+      "PowerShell(Get-ChildItem \"node_modules\\\\next\\\\dist\\\\docs\\\\01-app\\\\02-guides\" -Name | Where-Object { $_ -match \"auth|session|cookie|middleware|cms|content|fetching|dynamic|revalidate|isr|caching\" })"
     ]
   }
 }

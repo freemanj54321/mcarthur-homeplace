@@ -196,12 +196,20 @@ Firebase Auth is initialized but unused. It is reserved for the future admin das
 
 ## CI/CD & Deployment
 
+### Deployment Model
+
+**Firebase App Hosting deploys natively from GitHub** — no CI step triggers the rollout. When `master` is pushed, Firebase's GitHub connection (configured in the Firebase Console → App Hosting → backend settings) detects the push and creates a new rollout automatically.
+
+GitHub Actions runs **only as a CI gate** (lint, type check, build). It does not deploy.
+
 ### Pipelines
 
 | Workflow | Trigger | Steps |
 |---|---|---|
-| `deploy.yml` | Push to `master` | Lint → TypeCheck → Build → Firebase rollout |
+| `deploy.yml` | Push to `master` | Lint → TypeCheck → Build (verification only) |
 | `pr-checks.yml` | Pull request to `master` | Lint → TypeCheck → Build |
+
+> The file is still named `deploy.yml` for historical reasons but no longer deploys — Firebase handles that side natively.
 
 ### Firebase App Hosting Config (`apphosting.yaml`)
 
@@ -217,7 +225,8 @@ Firebase Auth is initialized but unused. It is reserved for the future admin das
 - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
 - `NEXT_PUBLIC_FIREBASE_APP_ID`
 - `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`
-- `FIREBASE_SERVICE_ACCOUNT_JSON` — full service account JSON for deployment auth
+
+> `FIREBASE_SERVICE_ACCOUNT_JSON` is no longer required for deployment — Firebase deploys via its own GitHub App connection. The secret can be removed from GitHub if it isn't used elsewhere.
 
 ---
 

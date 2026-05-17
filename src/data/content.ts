@@ -57,23 +57,23 @@ export const projects: Project[] = [
     id: 'main-house',
     slug: 'main-house',
     title: 'The Main House',
-    subtitle: 'Lorem ipsum dolor sit amet',
+    subtitle: 'A 350-square-foot cottage acquired in 1893, expanded by 1900 into the central-hall Queen Anne home that still stands today — listed on the National Register of Historic Places.',
     kind: 'Residence',
-    built: '1893–1898',
-    architect: 'Owner-built, with itinerant carpenters',
-    style: 'Folk Victorian, southern vernacular',
+    built: '1893 core; expanded to present form by 1900',
+    architect: 'Original structure pre-1893; additions by W.T. McArthur and his wife, 1893–1900',
+    style: 'Queen Anne with central-hall plan additions',
     materials: 'Long-leaf pine cut on the property; locally-fired brick foundation piers',
-    footprint: '2,140 sq ft over two floors, plus a 12-ft wraparound porch',
-    placeholder: 'Main House — wraparound porch, southwest elevation',
+    footprint: 'Original 350 sq ft four-square (now kitchen, pantry, bath, and dining room); expanded to a central-hall plan with two rooms on each side, an east-side bedroom addition, and a large screened porch joining the two',
+    placeholder: 'Main House — southwest elevation',
     excerpt:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      'Acquired by W.T. McArthur in approximately 1893 as a 350-square-foot four-square cottage, the Main House was expanded over the next seven years into the central-hall home that stands today — preserved largely unchanged for three-quarters of a century and listed on the National Register of Historic Places.',
     description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
+      'The Queen Anne style home on the property was originally acquired by W.T. McArthur in approximately 1893 as a four-square, three-hundred-and-fifty-square-foot house. This original structure is what is presently the kitchen, pantry, one bath, and a dining room. W.T. and his wife moved into the house and began additions and remodeling, and by 1900 the house had reached its present state: a traditional central-hall design with two rooms on each side. An additional room was built on the east side and used as a bedroom, and a large screened porch was built to attach the new addition to the older structure. At some point — likely in the late 1920s to early 1930s — a small bathroom was added to the east side of the house.\n\nWater was originally provided by a hand-dug well, incorporated as part of the covered porch near the kitchen; the well still exists in its original location. Later, a windmill with a pump and tank was installed near the house for running water. Later still, a kerosene-powered Delco generator provided DC power with battery storage for limited lighting — at a time when only about 3% of American farms had electricity (1922). The Rural Electrification Act of 1936 brought wired power to many rural residents, and the Rural Electrification Association installed the wiring, lights, and outlets at the Historic Homeplace. The home is preserved in the same condition as it has been for the past seventy-five years, and is listed on the National Register of Historic Places.',
     features: [
-      { label: 'The wraparound porch', body: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
-      { label: 'Heart-pine floors', body: 'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.' },
-      { label: 'Twelve-over-twelve windows', body: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.' },
-      { label: 'The kitchen ell', body: 'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.' },
+      { label: 'The original 1893 core', body: 'A 350-square-foot four-square cottage — the oldest part of the house, now serving as the kitchen, pantry, bath, and dining room.' },
+      { label: 'The central-hall plan', body: 'By 1900, additions had extended the house into its present central-hall layout, with two rooms on each side of the hall.' },
+      { label: 'The east-side addition and screened porch', body: 'An east-side bedroom, joined to the original structure by a large screened porch — and a small east-side bathroom added in the late 1920s or early 1930s.' },
+      { label: 'The hand-dug well', body: 'Originally the home’s water source, incorporated into a covered porch near the kitchen. The well still sits in its original location today.' },
     ],
   },
   {
@@ -210,8 +210,8 @@ export const events: Event[] = [
 ]
 
 export const milestones: Milestone[] = [
-  { year: '1893', title: 'The land is patented',     body: 'William Thomas McArthur patents 160 acres on the south fork.' },
-  { year: '1898', title: 'The Main House is raised', body: 'Built in five months, of long-leaf pine cut on the property.' },
+  { year: '1893', title: 'W.T. acquires the property', body: 'William Thomas McArthur acquires the farm and its original 350 sq ft four-square cottage.' },
+  { year: '1900', title: 'The Main House reaches its present form', body: 'Additions and remodeling completed: central-hall plan, east-side bedroom, and screened porch joining old to new.' },
   { year: '1912', title: 'A working farm',           body: 'Dairy, smokehouse, and corn crib added; the homeplace reaches full form.' },
   { year: '1947', title: 'The next generation',      body: 'The farm passes to the second generation; tobacco and cattle dominate.' },
   { year: '1989', title: 'The end of farming',       body: 'Active farming ceases. The buildings begin a long quiet.' },
