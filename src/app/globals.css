@@ -421,15 +421,15 @@ main.page { flex: 1 0 auto; }
   .utility-link { display: none; }
   .utility-cta  { font-size: 10.5px; letter-spacing: 0.12em; padding: 5px 12px; }
 
-  /* Main row: logo on the LEFT, hamburger on the RIGHT */
+  /* Main row: empty left spacer · centered logo · hamburger right */
   .header-main-inner {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 44px 1fr 44px;
     padding: 12px 18px;
     gap: 16px;
   }
   .nav-left, .nav-right { display: none; }
-  .brand { justify-content: flex-start; }
-  .mobile-toggle { display: grid; place-items: center; justify-self: end; }
+  .brand { grid-column: 2; justify-content: center; }
+  .mobile-toggle { grid-column: 3; display: grid; place-items: center; justify-self: end; }
 
   .mobile-nav.open {
     display: flex;
