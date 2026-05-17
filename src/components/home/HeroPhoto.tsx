@@ -18,7 +18,6 @@ export function HeroPhoto() {
         <div className="container-wide" style={{ position: 'relative', paddingTop: 96, paddingBottom: 96, minHeight: 'min(78vh, 760px)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 48 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, color: 'var(--tartan-cream)' }}>
             <div className="eyebrow" style={{ color: 'var(--tartan-gold)' }}>A foundation, est. 1893</div>
-            <div className="dateline" style={{ color: 'rgba(251,247,238,0.75)' }}>No. 03 · Spring · 2026</div>
           </div>
 
           <div>
