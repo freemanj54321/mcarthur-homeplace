@@ -6,15 +6,17 @@ export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }))
 }
 
-export async function generateMetadata(props: PageProps<'/projects/[slug]'>) {
-  const { slug } = await props.params
+type Props = { params: Promise<{ slug: string }> }
+
+export async function generateMetadata({ params }: Props) {
+  const { slug } = await params
   const project = projects.find((p) => p.slug === slug)
   if (!project) return {}
   return { title: `${project.title} — W.T. McArthur Historic Homeplace Foundation` }
 }
 
-export default async function ProjectPage(props: PageProps<'/projects/[slug]'>) {
-  const { slug } = await props.params
+export default async function ProjectPage({ params }: Props) {
+  const { slug } = await params
   const project = projects.find((p) => p.slug === slug)
   if (!project) notFound()
   const others = projects.filter((p) => p.slug !== slug).slice(0, 3)
