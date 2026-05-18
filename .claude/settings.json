@@ -36,7 +36,8 @@
       "Bash(tasklist //FI \"IMAGENAME eq node.exe\" //FO TABLE)",
       "Bash(wmic process *)",
       "Bash(taskkill //F //T //PID 35208)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(git remote *)"
     ]
   }
 }
