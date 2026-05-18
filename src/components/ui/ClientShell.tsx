@@ -1,18 +1,22 @@
 'use client'
 
 import { TweaksProvider } from '@/context/TweaksContext'
-import { Header } from './Header'
-import { Footer } from './Footer'
 import { TweaksPanel } from './TweaksPanel'
 import { DesignOptionsButton } from './DesignOptionsButton'
 
-export function ClientShell({ children }: { children: React.ReactNode }) {
+type Props = {
+  header: React.ReactNode
+  footer: React.ReactNode
+  children: React.ReactNode
+}
+
+export function ClientShell({ header, footer, children }: Props) {
   return (
     <TweaksProvider>
       <div className="shell">
-        <Header />
+        {header}
         {children}
-        <Footer />
+        {footer}
         <TweaksPanel />
         <DesignOptionsButton />
       </div>

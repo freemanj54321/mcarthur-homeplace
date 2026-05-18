@@ -3,8 +3,13 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { BrandMark } from './BrandMark'
+import type { ResolvedFooterNav } from '@/lib/cms/navigation'
 
-export function Footer() {
+function externalProps(kind: 'internal' | 'external') {
+  return kind === 'external' ? { target: '_blank', rel: 'noopener noreferrer' } : {}
+}
+
+export function Footer({ data }: { data: ResolvedFooterNav }) {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
 
@@ -18,26 +23,20 @@ export function Footer() {
                 <BrandMark size={120} />
               </span>
             </div>
-            <div className="footer-tagline">A century of weather,<br />a generation of care.</div>
+            <div className="footer-tagline" style={{ whiteSpace: 'pre-line' }}>{data.tagline}</div>
           </div>
-          <div>
-            <h4>Explore</h4>
-            <ul>
-              <li><Link href="/about">Our Story</Link></li>
-              <li><Link href="/what-to-see">What to See</Link></li>
-              <li><Link href="/stories">Stories &amp; News</Link></li>
-              <li><Link href="/visit">Plan a Visit</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4>Get Involved</h4>
-            <ul>
-              <li><Link href="/donate">Make a Donation</Link></li>
-              <li><Link href="/">Volunteer</Link></li>
-              <li><Link href="/">Share Your Story</Link></li>
-              <li><Link href="/">Educational Resources</Link></li>
-            </ul>
-          </div>
+          {data.columns.map((col) => (
+            <div key={col.id}>
+              <h4>{col.heading}</h4>
+              <ul>
+                {col.links.map((l) => (
+                  <li key={l.id}>
+                    <Link href={l.href} {...externalProps(l.kind)}>{l.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
           <div>
             <h4>Letters from the Porch</h4>
             <p style={{ fontSize: 14, color: 'rgba(251,247,238,0.78)', marginBottom: 4 }}>
@@ -61,9 +60,9 @@ export function Footer() {
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} W.T. McArthur Historic Homeplace Foundation. A 501(c)(3) nonprofit.</span>
           <div style={{ display: 'flex', gap: 24 }}>
-            <Link href="/">Privacy</Link>
-            <Link href="/">Accessibility</Link>
-            <Link href="/contact">Contact</Link>
+            {data.bottomLinks.map((l) => (
+              <Link key={l.id} href={l.href} {...externalProps(l.kind)}>{l.label}</Link>
+            ))}
           </div>
         </div>
       </div>

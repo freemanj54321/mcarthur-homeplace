@@ -1,0 +1,72 @@
+.cms-page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+.cms-hero {
+  max-width: 1400px;
+  margin: 0 auto 32px;
+}
+.cms-page-header h1 {
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 600;
+  margin: 32px 0 24px;
+  line-height: 1.1;
+}
+.cms-sections > .cms-section { margin: 24px 0; }
+.cms-richtext { font-size: 18px; line-height: 1.7; }
+.cms-richtext h2 { font-size: 28px; margin: 32px 0 12px; }
+.cms-richtext h3 { font-size: 22px; margin: 24px 0 10px; }
+.cms-richtext p  { margin: 0 0 1em; }
+.cms-richtext a  { color: #7a1f1f; text-decoration: underline; }
+.cms-richtext ul, .cms-richtext ol { margin: 0 0 1em 1.4em; }
+
+.cms-image figcaption {
+  font-size: 14px;
+  color: #666;
+  margin-top: 6px;
+  text-align: center;
+}
+
+.cms-twocol {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 720px) {
+  .cms-twocol { grid-template-columns: 1fr 1fr; }
+}
+.cms-twocol-col { font-size: 17px; line-height: 1.65; }
+
+.cms-quote {
+  border-left: 4px solid #7a1f1f;
+  padding: 8px 0 8px 20px;
+  margin: 32px 0;
+  font-size: 22px;
+  line-height: 1.5;
+  font-style: italic;
+}
+.cms-quote cite { display: block; margin-top: 8px; font-style: normal; font-size: 15px; color: #555; }
+
+.cms-callout {
+  padding: 20px 24px;
+  border-radius: 8px;
+  background: #f0e6cf;
+  color: #3a2a00;
+}
+.cms-callout--donate { background: #7a1f1f; color: #fbf7ee; }
+
+.cms-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+.cms-gallery-placeholder {
+  background: #ddd;
+  aspect-ratio: 4/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #666;
+}
