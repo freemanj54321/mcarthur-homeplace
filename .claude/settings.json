@@ -37,7 +37,9 @@
       "Bash(wmic process *)",
       "Bash(taskkill //F //T //PID 35208)",
       "Bash(npm install *)",
-      "Bash(git remote *)"
+      "Bash(git remote *)",
+      "mcp__plugin_firebase_firebase__apphosting_fetch_logs",
+      "Bash(node scripts/seed-editor.mjs kwwVP3BnTNNliB1vnhcItLjdr743 freemanj54321@gmail.com \"John Freeman\")"
     ]
   }
 }

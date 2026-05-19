@@ -1,6 +1,6 @@
 # W. T. McArthur Historic Homeplace — Project Overview
 
-> Last Updated: 2026-05-18
+> Last Updated: 2026-05-19
 
 ---
 
@@ -8,20 +8,18 @@
 
 > *"The mission is to engage the public in the stories of the W. T. McArthur historic homeplace and farm (Historic Homeplace) and how it represents a historic period in Southern American agriculture. We are dedicated to telling the authentic history of the Historic Homeplace, based on current information and from all perspectives, honoring the families and stories of all that lived and worked on the farm."*
 
-The **W. T. McArthur Historic Homeplace, Inc.** is a nonprofit heritage foundation operating a 19th-century farm restoration site. This website is the public-facing presence of that foundation — telling its stories, showcasing restoration projects, announcing events, and receiving donations.
+The **W. T. McArthur Historic Homeplace, Inc.** is a nonprofit heritage foundation operating a 19th-century farm restoration site in the American South. This website is the public-facing presence of that foundation — telling its stories, showcasing the property, announcing events, and receiving donations.
 
 ---
 
 ## What This App Is
 
-A **content-forward public website** for a nonprofit historic foundation. The primary goals are:
+A **content-forward public website** with a **Firestore-backed admin CMS** for editors. Two distinct surfaces:
 
-1. **Storytelling** — Present the history and ongoing restoration of the farm from all perspectives
-2. **Project showcase** — Document each structure being restored (Main House, Cooper Conner House, Cemetery, Smokehouse)
-3. **Community engagement** — Promote upcoming events, accept volunteer interest, and solicit donations
-4. **Foundation transparency** — Board members, partners, and timeline of milestones
+1. **Public site** — storytelling, property showcase, events, donations
+2. **Admin dashboard** (`/admin`) — authenticated CMS for board members/editors to manage navigation, footer, and pages without touching code
 
-This is not an app with heavy user interaction. It is closer to a digital brochure + photo gallery with a donation channel.
+The public site still reads some content from `src/data/content.ts` (the What to See property descriptions, news, events, board members). The CMS layer governs navigation structure and will progressively replace hardcoded content in later phases.
 
 ---
 
@@ -31,13 +29,15 @@ This is not an app with heavy user interaction. It is closer to a digital brochu
 |---|---|---|
 | Framework | Next.js 16 (App Router) | See `AGENTS.md` — this version has breaking changes from prior Next.js |
 | Language | TypeScript 5 (strict) | Path alias `@/*` → `src/*` |
-| React | 19.2 | Server Components where possible |
-| Styling | CSS custom properties (global) | No CSS-in-JS, no Tailwind — hand-crafted design system |
-| Database | Cloud Firestore | Photos only; content is hardcoded for now |
+| React | 19.2 | Server Components for data-fetching; Client Components for interaction |
+| Styling | CSS custom properties (global) | No CSS-in-JS, no Tailwind — hand-crafted design system in `globals.css` |
+| Validation | Zod | CMS schemas (sections, nav, pages) |
+| Database | Cloud Firestore | Photos, navigation config, CMS pages |
 | Storage | Firebase Storage | Images served from `mcarthur-tour.firebasestorage.app` |
-| Auth | Firebase Auth (imported, unused) | Reserved for future admin dashboard |
+| Auth | Firebase Auth (Google provider) | Active — used for editor/admin sign-in |
+| Admin SDK | firebase-admin | Server-only; requires `FIREBASE_SERVICE_ACCOUNT_JSON` env var |
 | Hosting | Firebase App Hosting (Cloud Run) | 0–2 instances, 512 MB, 80 concurrent connections |
-| CI/CD | GitHub Actions | Lint → type check → build → Firebase rollout |
+| CI/CD | GitHub Actions | Lint → type check → build (Firebase deploys natively) |
 
 ---
 
@@ -47,50 +47,82 @@ This is not an app with heavy user interaction. It is closer to a digital brochu
 
 ```
 src/
-├── app/                    # Next.js App Router pages
-│   ├── layout.tsx          # Root layout — wraps in ClientShell
-│   ├── page.tsx            # Home page
+├── app/
+│   ├── layout.tsx                 # Root layout — fetches nav, wraps in ClientShell
+│   ├── page.tsx                   # Home page
 │   ├── about/page.tsx
-│   ├── projects/
+│   ├── what-to-see/               # Property listings (was "projects")
 │   │   ├── page.tsx
 │   │   └── [slug]/page.tsx
 │   ├── stories/page.tsx
 │   ├── visit/page.tsx
-│   └── donate/page.tsx
+│   ├── donate/page.tsx
+│   └── admin/                     # Auth-gated CMS dashboard
+│       ├── layout.tsx             # Requires active session; redirects to /admin/login
+│       ├── page.tsx               # Dashboard home
+│       ├── login/                 # Google sign-in page
+│       ├── navigation/            # Edit primary nav + footer nav
+│       ├── pages/                 # List, create, edit, publish CMS pages
+│       │   ├── page.tsx
+│       │   ├── new/page.tsx
+│       │   └── [id]/page.tsx
+│       └── preview/[...slug]/     # Draft preview before publish
 ├── components/
-│   ├── (ui)                # Header, Footer, BrandMark, ClientShell, TweaksPanel, etc.
-│   ├── home/               # Hero variants, MissionSection, ProjectsTeaser, etc.
-│   ├── projects/           # ProjectsList, ProjectDetailPage
-│   ├── donate/             # DonateForm
-│   └── about/              # AboutDonateStrip
+│   ├── ui/                        # Header, Footer, BrandMark, ClientShell, TweaksPanel, etc.
+│   ├── home/                      # Hero variants, MissionSection, ProjectsTeaser, etc.
+│   ├── projects/                  # ProjectsList, ProjectDetailPage
+│   ├── donate/                    # DonateForm
+│   └── about/                     # AboutDonateStrip
 ├── context/
-│   └── TweaksContext.tsx   # Design-mode toggle state
+│   └── TweaksContext.tsx          # Temporary design-switching state
 ├── data/
-│   └── content.ts          # All hardcoded content (projects, news, events, board)
+│   └── content.ts                 # Hardcoded content (What to See items, news, events, board)
 └── lib/
-    ├── firebase.ts         # Firebase init — exports db, storage
-    └── photos.ts           # Firestore queries for photo collections
+    ├── firebase.ts                # Client-side Firebase init (Firestore, Storage)
+    ├── firebase-admin.ts          # Server-side Admin SDK (Auth, Firestore, Storage)
+    ├── photos.ts                  # Firestore photo queries
+    ├── auth/
+    │   ├── server.ts              # Session verification (server components / actions)
+    │   └── client.ts              # Firebase Auth helpers (sign in, sign out)
+    └── cms/
+        ├── navigation.ts          # Nav config CRUD — Firestore `navigation` collection
+        ├── pages.ts               # Page CRUD — Firestore `pages` collection
+        ├── sections.ts            # Zod schemas for all section types
+        └── sanitize.ts            # HTML sanitization for rich-text sections
 ```
 
 ### Data Flow
 
 ```
-Hardcoded content (data/content.ts)
-    └── imported directly into page components
+Navigation (Header/Footer)
+    ├── Firestore `navigation` collection (primary, footer docs)
+    │   └── fetched at request time by server components in layout.tsx
+    └── Falls back to hardcoded defaults in navigation.ts if Firestore unavailable
 
-Firestore `photos` collection
-    └── queried via lib/photos.ts
-        ├── getProjectPhotos(slug) — photos for a specific project
-        └── getFeaturedPhotos()   — homepage/featured use
+Property / What to See content
+    └── src/data/content.ts → imported directly into page components
+        (Phase 4 will migrate to Firestore `pages` collection)
+
+CMS Pages (admin-created)
+    └── Firestore `pages` collection
+        ├── getPublishedPage(slug) → public [slug] route
+        └── getPageById(id) → admin editor
+
+Photos
+    └── Firestore `photos` collection → queried via lib/photos.ts
+        ├── getProjectPhotos(slug)
+        └── getFeaturedPhotos()
 ```
 
-No API routes. No server actions. No backend middleware. The app is fully client-rendered except where Next.js handles SSR automatically.
+### Navigation Architecture
+
+Navigation data lives in Firestore (`navigation/primary` and `navigation/footer`) with hardcoded defaults in `src/lib/cms/navigation.ts`. The `What to See` nav item uses `dynamicChildren: 'projects'` to auto-expand from the `projects` array (Phase 4 will expand from Firestore instead). Editors can modify nav structure, labels, hrefs, and add/remove items via `/admin/navigation`.
 
 ---
 
 ## Design System
 
-The design system lives entirely in [src/app/globals.css](src/app/globals.css) (~720 lines). It is **not Tailwind** — all utility comes from CSS custom properties on the root element.
+The design system lives entirely in [src/app/globals.css](src/app/globals.css). It is **not Tailwind** — all utility comes from CSS custom properties on the root element.
 
 ### Color Palette (Clan MacArthur Tartan)
 
@@ -102,9 +134,7 @@ The design system lives entirely in [src/app/globals.css](src/app/globals.css) (
 | `--tartan-parch` | `#F4EDE0` | Default background (parchment) |
 | `--tartan-ink` | `#14110D` | Body text |
 
-### Typography Pairs
-
-Three pairs, switchable via `data-typepair` attribute. The default is **Type A**.
+### Typography Pairs (switchable, default is A)
 
 | Pair | Display | Body | Feel |
 |---|---|---|---|
@@ -112,85 +142,118 @@ Three pairs, switchable via `data-typepair` attribute. The default is **Type A**
 | B | Playfair Display | Work Sans | Classical magazine |
 | C | Cormorant Garamond | Manrope | Refined modern |
 
-All fonts loaded via Google Fonts. Script accent: **Caveat** (handwritten).
+### Header Layout
 
-### Modes
-
-- **Day** (default): Parchment background, dark ink text
-- **Dark**: Deep `--tartan-green` background, cream text
-
-Mode and tartan intensity (subtle / medium / bold) are set as `data-*` attributes on `<html>` by `TweaksContext`.
+Two-row layout:
+- **Utility row** — slim band with "Plan a Visit" and gold Donate CTA
+- **Main row** — left nav · centered logo (104px desktop) · right nav
+- **What to See** has a hover/focus dropdown listing all 8 property pages
+- Mobile: centered logo, hamburger on the right, inline submenu under What to See
 
 ---
 
 ## Key Architectural Decisions
 
-### 1. Content is hardcoded — intentionally
+### 1. Content is partly hardcoded, partly Firestore — by phase
 
-All projects, news items, events, board members, and milestones live in [src/data/content.ts](src/data/content.ts). This is a deliberate choice for the current phase: no CMS complexity, no Firestore reads for text content, no API latency. When the foundation needs to update content, a developer edits the file and deploys.
-
-**This will change** when an admin dashboard is built. At that point content will move to Firestore and `content.ts` becomes a fallback or is removed.
+`src/data/content.ts` still holds the What to See property entries, news, events, board members, and milestones. This is intentional for the current phase. The CMS (`pages` collection) governs admin-created pages. Future phases will migrate `content.ts` data to Firestore.
 
 ### 2. TweaksPanel is a temporary design tool
 
-The [TweaksPanel](src/components/TweaksPanel.tsx) and [TweaksContext](src/context/TweaksContext.tsx) expose live controls for switching hero variants, color modes, typography pairs, and tartan intensity. This exists to let stakeholders explore design options without code changes.
-
-**It is not a permanent user-facing feature.** Once the design is locked, TweaksPanel and TweaksContext will be removed and the chosen values will be hardcoded into the CSS defaults.
+[TweaksPanel](src/components/ui/TweaksPanel.tsx) and [TweaksContext](src/context/TweaksContext.tsx) expose live controls for switching hero variants, color modes, typography pairs, and tartan intensity. **Not a permanent user-facing feature.** Will be removed once the design is locked.
 
 ### 3. Firebase is the only backend
 
-Firestore handles photo metadata; Firebase Storage serves images; Firebase App Hosting runs the Next.js app. There is no separate API server, no Postgres, no Redis. This keeps infrastructure minimal for a small nonprofit.
+Firestore handles navigation config, CMS pages, and photo metadata. Firebase Storage serves images. Firebase Auth handles editor sign-in. Firebase App Hosting runs the Next.js app. No separate API server, no Postgres, no Redis.
 
-### 4. No authentication yet
+### 4. Admin SDK requires a service account
 
-Firebase Auth is initialized but unused. It is reserved for the future admin dashboard, where board members will be able to upload photos, add news items, and manage events without a developer.
+Server-side CMS operations (reading/writing nav, pages, auth verification) use `firebase-admin` via `src/lib/firebase-admin.ts`. This requires `FIREBASE_SERVICE_ACCOUNT_JSON` as an env var with the full service account JSON. **Without it, the admin dashboard will not work and the CMS nav fallback to defaults.**
+
+### 5. Navigation is CMS-editable; What to See dropdown is dynamic
+
+The `What to See` nav item expands its dropdown from `projects` in `content.ts` at request time (via `dynamicChildren: 'projects'` in the nav config). When content.ts is replaced by Firestore, Phase 4 will swap the resolver to read the `pages` collection instead.
 
 ---
 
-## Firestore Schema
+## Firestore Collections
+
+### `navigation` collection
+
+| Document | Contents |
+|---|---|
+| `primary` | `{ utility[], left[], right[], updatedBy, updatedAt }` — primary header nav |
+| `footer` | `{ tagline, columns[], bottomLinks[], updatedBy, updatedAt }` — footer nav |
+
+See `ResolvedPrimaryNav` / `ResolvedFooterNav` types in [src/lib/cms/navigation.ts](src/lib/cms/navigation.ts).
+
+### `pages` collection
+
+CMS-managed pages with draft/publish workflow.
+
+| Field | Type | Description |
+|---|---|---|
+| `slug` | string | URL path (e.g. `what-to-see/main-house`) |
+| `title` | string | Page title |
+| `hero` | object\|null | `{ storagePath, downloadUrl, alt }` |
+| `sections` | array | Ordered section blocks (see section types below) |
+| `status` | `'draft'\|'published'` | |
+| `publishedSnapshot` | object\|null | Frozen copy of last-published title/hero/sections |
+| `publishedAt` | timestamp\|null | |
+| `createdBy` / `updatedBy` | string | Firebase Auth UID |
+
+**Section types:** `richText`, `twoColumn`, `quote`, `callout`, `image`, `gallery` — all validated by Zod schemas in [src/lib/cms/sections.ts](src/lib/cms/sections.ts).
 
 ### `photos` collection
 
 | Field | Type | Description |
 |---|---|---|
 | `filename` | string | Original filename |
-| `storagePath` | string | Path in Firebase Storage bucket |
+| `storagePath` | string | Path in Firebase Storage |
 | `downloadUrl` | string | Public CDN URL |
 | `caption` | string | Display caption |
 | `altText` | string | Accessibility alt text |
-| `project` | string | Matches project `slug` in `content.ts` |
+| `project` | string | Matches What to See slug |
 | `category` | string | e.g. `"exterior"`, `"interior"`, `"progress"` |
-| `featured` | boolean | Whether to show on home/featured sections |
-| `order` | number | Sort order within a project/category |
-| `dateTaken` | timestamp | When the photo was taken |
-| `uploadedAt` | timestamp | Server timestamp of upload |
+| `featured` | boolean | Show on home/featured sections |
+| `order` | number | Sort order |
+| `dateTaken` | timestamp | |
+| `uploadedAt` | timestamp | |
 
 ---
 
 ## Current Content (as of last update)
 
-**Projects (4):**
-- The Main House (1893–1898, Folk Victorian, ~1,400 sq ft)
-- The Cooper Conner House (c. 1908, Vernacular cottage)
-- The Family Cemetery (1897+, burial ground)
-- The Smokehouse & Outbuildings (c. 1912, log construction)
+**What to See (8 items):**
+- The Main House (1893 core; expanded by 1900; Queen Anne, real historical content)
+- The Cooper Conner House (c. 1908, lipsum placeholder)
+- The Onion Barn (lipsum)
+- The Commissary (lipsum)
+- Tenant Housing (lipsum)
+- The School House (lipsum)
+- The Long-leaf Pines (lipsum)
+- Dead River Cemetery (lipsum)
+
+Items with lipsum are awaiting real historical content — the structure is in place.
 
 **Board Members (6):** see `content.ts` — `boardMembers` array
 
-**Partner Organizations (5):** see `content.ts` — `partners` array
-
-**Timeline Milestones (7):** 1893 → 2026
+**Timeline Milestones (7):** 1893 (property acquired) → 1900 (Main House complete) → … → 2026
 
 ---
 
-## Planned Features (Roadmap)
+## CMS Phases
 
-| Feature | Status | Notes |
+| Phase | Scope | Status |
 |---|---|---|
-| Photo galleries | In progress | Firestore queries exist; UI gallery component needed |
-| Donation backend | Planned | Stripe integration for `DonateForm` component |
-| Admin dashboard | Planned | Auth-gated CMS for board members to manage content |
-| Event registration | Not started | Likely form + email notification |
+| 1 | Admin auth, dashboard shell, login | Shipped 2026-05-19 |
+| 2 | Navigation editor (primary + footer) | Shipped 2026-05-19 |
+| 2b | CMS pages CRUD (create, edit, publish) | Shipped 2026-05-19 |
+| 3 | Migrate home/about/visit/donate/stories from content.ts to Firestore pages | Planned |
+| 4 | Migrate What to See from content.ts to Firestore; swap dynamic nav resolver | Planned |
+| 5 | Photo upload UI in admin | Planned |
+| 6 | Donation backend (Stripe) | Planned |
+| 7 | Event registration | Not started |
 
 ---
 
@@ -198,9 +261,9 @@ Firebase Auth is initialized but unused. It is reserved for the future admin das
 
 ### Deployment Model
 
-**Firebase App Hosting deploys natively from GitHub** — no CI step triggers the rollout. When `master` is pushed, Firebase's GitHub connection (configured in the Firebase Console → App Hosting → backend settings) detects the push and creates a new rollout automatically.
+**Firebase App Hosting deploys natively from GitHub** — no CI step triggers the rollout. Pushes to `master` are picked up by Firebase's GitHub connection automatically.
 
-GitHub Actions runs **only as a CI gate** (lint, type check, build). It does not deploy.
+GitHub Actions runs **only as a CI gate** (lint, type check, build).
 
 ### Pipelines
 
@@ -209,42 +272,37 @@ GitHub Actions runs **only as a CI gate** (lint, type check, build). It does not
 | `deploy.yml` | Push to `master` | Lint → TypeCheck → Build (verification only) |
 | `pr-checks.yml` | Pull request to `master` | Lint → TypeCheck → Build |
 
-> The file is still named `deploy.yml` for historical reasons but no longer deploys — Firebase handles that side natively.
-
 ### Firebase App Hosting Config (`apphosting.yaml`)
 
-- 1 CPU, 512 MB memory
-- Min 0 instances (scales to zero), max 2
-- 80 concurrent connections
-- All `NEXT_PUBLIC_FIREBASE_*` env vars stored in Google Secret Manager
+- 1 CPU, 512 MB memory, 0–2 instances, 80 concurrent connections
+- All env vars stored in Google Secret Manager
 
-### Secrets Required (GitHub → Settings → Secrets)
+### Secrets Required
 
+**GitHub Actions (Settings → Secrets):**
 - `NEXT_PUBLIC_FIREBASE_API_KEY`
 - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
 - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
 - `NEXT_PUBLIC_FIREBASE_APP_ID`
 - `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`
 
-> `FIREBASE_SERVICE_ACCOUNT_JSON` is no longer required for deployment — Firebase deploys via its own GitHub App connection. The secret can be removed from GitHub if it isn't used elsewhere.
+**Runtime (Google Secret Manager / `.env.local`):**
+- All `NEXT_PUBLIC_FIREBASE_*` vars above
+- `FIREBASE_SERVICE_ACCOUNT_JSON` — full service account JSON, **required for the admin CMS and navigation to work**
 
 ---
 
 ## Local Development Setup
 
 ```bash
-# 1. Clone
-git clone <repo-url>
-cd mcarthur-homeplace
-
-# 2. Install dependencies
+# 1. Clone and install
+git clone <repo-url> && cd mcarthur-homeplace
 npm install
 
-# 3. Enable auto-updating git hook (updates Last Updated date in this file on commit)
+# 2. Enable auto-updating git hook
 git config core.hooksPath .githooks
 
-# 4. Create .env.local with Firebase credentials
-# (Get values from Firebase console → Project settings → Web app)
+# 3. Create .env.local
 NEXT_PUBLIC_FIREBASE_API_KEY=...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=mcarthur-tour
@@ -253,11 +311,18 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=...
 
-# 5. Run dev server
+# Required for admin CMS (navigation, pages, auth verification):
+FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"mcarthur-tour",...}
+
+# 4. Run dev server
 npm run dev
 ```
 
-> **Note on Next.js version:** This project uses Next.js 16, which has breaking changes from prior versions. Read `node_modules/next/dist/docs/` before writing App Router code.
+> **Admin dashboard:** Visit `/admin` — sign in with a Google account that has been granted editor access in Firebase Auth.
+
+> **Without `FIREBASE_SERVICE_ACCOUNT_JSON`:** The admin dashboard will throw. The public site will still work, but navigation will use hardcoded defaults from `src/lib/cms/navigation.ts`.
+
+> **Next.js 16:** Has breaking changes from prior versions. Read `node_modules/next/dist/docs/` before writing App Router code.
 
 ---
 
@@ -265,11 +330,16 @@ npm run dev
 
 | File | Purpose |
 |---|---|
-| [src/data/content.ts](src/data/content.ts) | All hardcoded site content |
-| [src/lib/firebase.ts](src/lib/firebase.ts) | Firebase client initialization |
+| [src/data/content.ts](src/data/content.ts) | Hardcoded What to See items, news, events, board members |
+| [src/lib/firebase.ts](src/lib/firebase.ts) | Client-side Firebase init |
+| [src/lib/firebase-admin.ts](src/lib/firebase-admin.ts) | Server-side Admin SDK — needs `FIREBASE_SERVICE_ACCOUNT_JSON` |
+| [src/lib/cms/navigation.ts](src/lib/cms/navigation.ts) | Nav CRUD + hardcoded defaults |
+| [src/lib/cms/pages.ts](src/lib/cms/pages.ts) | CMS page CRUD |
+| [src/lib/cms/sections.ts](src/lib/cms/sections.ts) | Zod schemas for all section types |
+| [src/lib/auth/server.ts](src/lib/auth/server.ts) | Session verification for server components |
 | [src/lib/photos.ts](src/lib/photos.ts) | Firestore photo queries |
-| [src/app/globals.css](src/app/globals.css) | Entire design system (colors, type, spacing, modes) |
+| [src/app/globals.css](src/app/globals.css) | Entire design system |
+| [src/app/admin/layout.tsx](src/app/admin/layout.tsx) | Admin auth guard |
 | [src/context/TweaksContext.tsx](src/context/TweaksContext.tsx) | Temporary design-switching state (to be removed) |
-| [src/components/ClientShell.tsx](src/components/ClientShell.tsx) | App wrapper: Header + Footer + TweaksProvider |
 | [apphosting.yaml](apphosting.yaml) | Firebase App Hosting runtime config |
-| [.github/workflows/deploy.yml](.github/workflows/deploy.yml) | Production deploy pipeline |
+| [.github/workflows/deploy.yml](.github/workflows/deploy.yml) | CI gate (lint/type/build only — no deploy step) |
