@@ -53,7 +53,7 @@ export function Footer({ data }: { data: ResolvedFooterNav }) {
                 onChange={(e) => setEmail(e.target.value)}
                 aria-label="Email address"
               />
-              <button type="submit">{sent ? 'Thanks ✓' : 'Subscribe →'}</button>
+              <button type="submit" aria-live="polite" aria-atomic="true">{sent ? 'Thanks ✓' : 'Subscribe →'}</button>
             </form>
           </div>
         </div>

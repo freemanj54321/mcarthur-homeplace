@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BrandMark } from './BrandMark'
@@ -21,7 +21,19 @@ function DesktopNavItem({
   isActive: (href: string) => boolean
   onClose: () => void
 }) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
   const ext = externalProps(item.kind)
+
+  useEffect(() => {
+    if (!open) return
+    const onFocusIn = (e: FocusEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('focusin', onFocusIn)
+    return () => document.removeEventListener('focusin', onFocusIn)
+  }, [open])
+
   if (!item.children || item.children.length === 0) {
     return (
       <Link
@@ -34,26 +46,43 @@ function DesktopNavItem({
       </Link>
     )
   }
+
+  const openWithFocus = () => {
+    setOpen(true)
+    requestAnimationFrame(() => {
+      containerRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+    })
+  }
+
   return (
-    <div className="nav-item-with-dropdown">
+    <div ref={containerRef} className="nav-item-with-dropdown">
       <Link
         href={item.href}
         className={`nav-link${isActive(item.href) ? ' active' : ''}`}
         onClick={onClose}
-        aria-haspopup="true"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown') { e.preventDefault(); openWithFocus() }
+          if (e.key === 'Escape') setOpen(false)
+        }}
         {...ext}
       >
         {item.label}
         <span className="nav-caret" aria-hidden="true">▾</span>
       </Link>
-      <div className="nav-dropdown" role="menu">
+      <div
+        className={`nav-dropdown${open ? ' open' : ''}`}
+        role="menu"
+        onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false) }}
+      >
         {item.children.map((c) => (
           <Link
             key={c.id}
             href={c.href}
             className={`nav-dropdown-link${isActive(c.href) ? ' active' : ''}`}
             role="menuitem"
-            onClick={onClose}
+            onClick={() => { onClose(); setOpen(false) }}
             {...externalProps(c.kind)}
           >
             {c.label}

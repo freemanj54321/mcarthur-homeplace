@@ -17,14 +17,23 @@ const STEPS = ['Amount', 'Designation', 'Your details', 'Review', 'Done']
 
 function Stepper({ step }: { step: number }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${STEPS.length}, 1fr)`, gap: 4 }}>
-      {STEPS.map((s, i) => (
-        <div key={s} style={{ paddingTop: 12, borderTop: `2px solid ${i <= step ? 'var(--c-accent)' : 'var(--c-line)'}` }}>
-          <div className="dateline" style={{ color: i <= step ? 'var(--c-text)' : 'var(--c-text-muted)' }}>0{i + 1}</div>
-          <div style={{ fontSize: 14, fontWeight: i === step ? 600 : 400, marginTop: 4 }}>{s}</div>
-        </div>
-      ))}
-    </div>
+    <>
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}
+      >
+        Step {step + 1} of {STEPS.length}: {STEPS[step]}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${STEPS.length}, 1fr)`, gap: 4 }}>
+        {STEPS.map((s, i) => (
+          <div key={s} style={{ paddingTop: 12, borderTop: `2px solid ${i <= step ? 'var(--c-accent)' : 'var(--c-line)'}` }}>
+            <div className="dateline" style={{ color: i <= step ? 'var(--c-text)' : 'var(--c-text-muted)' }}>0{i + 1}</div>
+            <div style={{ fontSize: 14, fontWeight: i === step ? 600 : 400, marginTop: 4 }}>{s}</div>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
 
@@ -58,12 +67,19 @@ function StepAmount({ amount, setAmount, custom, setCustom, frequency, setFreque
         <label className="dateline" style={{ display: 'block', marginBottom: 10 }}>Or enter your own</label>
         <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1.5px solid var(--c-text)', paddingBottom: 8 }}>
           <span style={{ fontSize: 28, fontFamily: 'var(--f-display)' }}>$</span>
-          <input type="number" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="0" style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 28, fontFamily: 'var(--f-display)', fontVariantNumeric: 'tabular-nums', padding: '4px 8px', color: 'var(--c-text)', outline: 'none' }} />
+          <input type="number" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="0" style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 28, fontFamily: 'var(--f-display)', fontVariantNumeric: 'tabular-nums', padding: '4px 8px', color: 'var(--c-text)' }} />
         </div>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 32 }}>
-        <button onClick={onNext} className="btn btn-primary btn-lg">Continue <span className="arrow">→</span></button>
-      </div>
+      {(() => {
+        const canContinue = (custom ? parseFloat(custom) || 0 : amount) > 0
+        return (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 32 }}>
+            <button onClick={onNext} disabled={!canContinue} className="btn btn-primary btn-lg" style={{ opacity: canContinue ? 1 : 0.4, cursor: canContinue ? 'pointer' : 'not-allowed' }}>
+              Continue <span className="arrow">→</span>
+            </button>
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -84,7 +100,7 @@ function StepDesignation({ designation, setDesignation, onBack, onNext }: {
       <p className="muted" style={{ marginTop: 8, fontSize: 14 }}>You can split a gift later by giving multiple times.</p>
       <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {opts.map((o) => (
-          <label key={o.id} style={{ display: 'grid', gridTemplateColumns: '24px 1fr', gap: 14, padding: '18px 20px', border: `1px solid ${designation === o.id ? 'var(--c-primary)' : 'var(--c-line)'}`, background: designation === o.id ? 'rgba(31, 74, 46, 0.04)' : 'transparent', cursor: 'pointer', alignItems: 'baseline' }}>
+          <label key={o.id} style={{ display: 'grid', gridTemplateColumns: '24px 1fr', gap: 14, padding: '18px 20px', border: `1px solid ${designation === o.id ? 'var(--c-primary)' : 'var(--c-line)'}`, background: designation === o.id ? 'var(--c-line-soft)' : 'transparent', cursor: 'pointer', alignItems: 'baseline' }}>
             <input type="radio" name="dst" value={o.id} checked={designation === o.id} onChange={() => setDesignation(o.id)} style={{ accentColor: 'var(--c-primary)' }} />
             <div>
               <div style={{ fontFamily: 'var(--f-display)', fontSize: 18, fontWeight: 500 }}>{o.name}</div>
@@ -106,7 +122,7 @@ function Field({ label, type = 'text', value, onChange, placeholder }: { label: 
   return (
     <label style={{ display: 'block' }}>
       <span className="dateline" style={{ display: 'block', marginBottom: 8 }}>{label}</span>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1.5px solid var(--c-line)', background: 'transparent', fontFamily: 'var(--f-body)', fontSize: 16, color: 'var(--c-text)', outline: 'none' }} />
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ width: '100%', padding: '12px 0', border: 'none', borderBottom: '1.5px solid var(--c-line)', background: 'transparent', fontFamily: 'var(--f-body)', fontSize: 16, color: 'var(--c-text)' }} />
     </label>
   )
 }
