@@ -8,13 +8,9 @@ import {
   saveFooterNav,
   savePrimaryNav,
 } from '@/lib/cms/navigation'
+import { fmtError } from '@/lib/cms/action-error'
 
 type Result = { ok: true } | { ok: false; error: string }
-
-function fmtError(e: unknown): string {
-  if (e instanceof Error) return e.message
-  return 'Unknown error'
-}
 
 export async function savePrimaryNavAction(input: unknown): Promise<Result> {
   const editor = await requireEditor()

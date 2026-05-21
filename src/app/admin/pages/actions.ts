@@ -12,14 +12,10 @@ import {
   unpublishPage as unpublishPageDoc,
   updatePage,
 } from '@/lib/cms/pages'
+import { fmtError } from '@/lib/cms/action-error'
 
 type Result = { ok: true } | { ok: false; error: string }
 type CreateResult = { ok: true; id: string } | { ok: false; error: string }
-
-function fmtError(e: unknown): string {
-  if (e instanceof Error) return e.message
-  return 'Unknown error'
-}
 
 export async function savePageAction(
   id: string | null,
@@ -75,12 +71,12 @@ export async function unpublishPageAction(id: string): Promise<Result> {
 }
 
 export async function deletePageAction(id: string): Promise<Result> {
-  await requireEditor()
+  const editor = await requireEditor()
   let slug: string | null = null
   try {
     const page = await getPageById(id)
     if (page) slug = page.slug
-    await deletePageDoc(id)
+    await deletePageDoc(id, editor.uid)
   } catch (e) {
     return { ok: false, error: fmtError(e) }
   }

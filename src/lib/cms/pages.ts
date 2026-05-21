@@ -133,6 +133,8 @@ export async function unpublishPage(id: string, editorUid: string): Promise<void
   })
 }
 
-export async function deletePage(id: string): Promise<void> {
-  await adminDb().collection(COL).doc(id).delete()
+export async function deletePage(id: string, editorUid: string): Promise<void> {
+  const ref = adminDb().collection(COL).doc(id)
+  await ref.update({ deletedBy: editorUid, updatedBy: editorUid, updatedAt: FieldValue.serverTimestamp() })
+  await ref.delete()
 }

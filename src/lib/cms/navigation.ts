@@ -100,7 +100,7 @@ const DEFAULT_FOOTER: FooterNavInput = {
 
 function resolveDynamicChildren(item: NavItem): ResolvedNavItem {
   if (!item.dynamicChildren) {
-    const { ...rest } = item
+    const { dynamicChildren: _, ...rest } = item
     return rest
   }
   if (item.dynamicChildren === 'projects') {
