@@ -1,6 +1,6 @@
 # W. T. McArthur Historic Homeplace — Project Overview
 
-> Last Updated: 2026-05-20
+> Last Updated: 2026-05-26
 
 ---
 

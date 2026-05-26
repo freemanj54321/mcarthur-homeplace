@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 export type HeroVariant   = 'photo' | 'collage' | 'typographic'
 export type ColorMode     = 'day' | 'dark'
 export type CardLayout    = 'classic' | 'split' | 'overlay'
-export type TypePair      = 'A' | 'B' | 'C'
+export type TypePair      = 'A' | 'B' | 'C' | 'D'
 export type TartanLevel   = 'subtle' | 'medium' | 'bold'
 export type DonateStyle   = 'quiet' | 'banner' | 'sticker'
 

@@ -149,6 +149,7 @@ export function TweaksPanel() {
                   { value: 'A', label: 'Fraunces + Inter (editorial)' },
                   { value: 'B', label: 'Playfair + Work Sans (classical)' },
                   { value: 'C', label: 'Cormorant + Manrope (refined)' },
+                  { value: 'D', label: 'Morris Gold + EB Garamond (Arts & Crafts)' },
                 ]} />
             </Row>
           </Section>

@@ -87,11 +87,19 @@ export function PageRenderer({ title, hero, sections }: PageRendererProps) {
       <header className="cms-page-header">
         <h1>{title}</h1>
       </header>
-      <div className="cms-sections">
-        {sections.map((s) => (
-          <RenderSection key={s.id} section={s} />
-        ))}
-      </div>
+      <SectionsRenderer sections={sections} />
     </article>
+  )
+}
+
+/** Renders only the section list — no page wrapper, title, or hero.
+ *  Used by hybrid pages that keep a custom layout but pull body copy from the CMS. */
+export function SectionsRenderer({ sections }: { sections: Section[] }) {
+  return (
+    <div className="cms-sections">
+      {sections.map((s) => (
+        <RenderSection key={s.id} section={s} />
+      ))}
+    </div>
   )
 }

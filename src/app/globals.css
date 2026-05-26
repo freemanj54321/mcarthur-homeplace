@@ -9,8 +9,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Work+Sans:wght@300;400;500;600;700&display=swap');
 /* Type pair C — Cormorant Garamond + Manrope (refined modern) */
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Manrope:wght@300;400;500;600;700&display=swap');
+/* Type pair D — P22 Morris Gold + EB Garamond (Arts & Crafts heritage) */
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap');
 /* Handwritten note accent for family-album flavor */
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&display=swap');
+
+@font-face {
+  font-family: 'P22 Morris Gold';
+  src: url('/fonts/P22MorrisGold.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* Tartan palette — never changes */
@@ -70,6 +80,11 @@
 [data-typepair="C"] {
   --f-display: 'Cormorant Garamond', 'Times New Roman', serif;
   --f-body:    'Manrope', -apple-system, sans-serif;
+  --f-display-feat: normal;
+}
+[data-typepair="D"] {
+  --f-display: 'P22 Morris Gold', 'Times New Roman', serif;
+  --f-body:    'EB Garamond', 'Georgia', serif;
   --f-display-feat: normal;
 }
 
