@@ -1,9 +1,9 @@
 import Link from 'next/link'
-import { news } from '@/data/content'
+import { NewsItem } from '@/lib/cms/news'
 import { Placeholder } from '@/components/ui/Placeholder'
 import { SectionHead } from '@/components/ui/SectionHead'
 
-export function StoriesTeaser() {
+export function StoriesTeaser({ news }: { news: NewsItem[] }) {
   return (
     <section className="section">
       <div className="container">
@@ -11,7 +11,12 @@ export function StoriesTeaser() {
         <div style={{ marginTop: 56, display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 32 }}>
           {news.map((n, i) => (
             <Link key={n.id} href="/stories" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <Placeholder label={n.placeholder} aspect={i === 0 ? 'wide' : 'photo'} />
+              {n.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={n.image.downloadUrl} alt={n.image.alt || n.title} style={{ width: '100%', aspectRatio: i === 0 ? '16 / 9' : '4 / 3', objectFit: 'cover' }} />
+              ) : (
+                <Placeholder label={n.placeholder} aspect={i === 0 ? 'wide' : 'photo'} />
+              )}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                   <span style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--c-accent)', fontWeight: 700 }}>{n.category}</span>

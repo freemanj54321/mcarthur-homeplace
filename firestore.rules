@@ -27,12 +27,17 @@ service cloud.firestore {
       allow write: if isEditor();
     }
 
-    // Future structured collections (Phase 4).
-    match /projects/{id}    { allow read: if true; allow write: if isEditor(); }
-    match /events/{id}      { allow read: if true; allow write: if isEditor(); }
-    match /milestones/{id}  { allow read: if true; allow write: if isEditor(); }
-    match /boardMembers/{id}{ allow read: if true; allow write: if isEditor(); }
-    match /partners/{id}    { allow read: if true; allow write: if isEditor(); }
+    // Structured collections (Phase 4): public reads only published docs;
+    // editors read drafts and write. (Server-side Admin SDK bypasses these,
+    // so this is defense-in-depth against direct client access.)
+    function structuredRead() { return resource.data.status == 'published'; }
+    match /projects/{id}     { allow read: if structuredRead(); allow read, write: if isEditor(); }
+    match /news/{id}         { allow read: if structuredRead(); allow read, write: if isEditor(); }
+    match /events/{id}       { allow read: if structuredRead(); allow read, write: if isEditor(); }
+    match /milestones/{id}   { allow read: if structuredRead(); allow read, write: if isEditor(); }
+    match /boardMembers/{id} { allow read: if structuredRead(); allow read, write: if isEditor(); }
+    match /partners/{id}     { allow read: if structuredRead(); allow read, write: if isEditor(); }
+
     match /navigation/{id}  { allow read: if true; allow write: if isEditor(); }
 
     // Default-deny: anything else.

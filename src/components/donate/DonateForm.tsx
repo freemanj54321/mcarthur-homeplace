@@ -2,13 +2,13 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { projects } from '@/data/content'
 import { TartanRule } from '@/components/ui/TartanRule'
 import { SectionHead } from '@/components/ui/SectionHead'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type Frequency   = 'once' | 'monthly'
 type Designation = string
+export type DonateProjectOption = { slug: string; title: string }
 
 interface DonorInfo { name: string; email: string; anonymous: boolean; dedicate: string }
 
@@ -85,8 +85,9 @@ function StepAmount({ amount, setAmount, custom, setCustom, frequency, setFreque
 }
 
 // ── Step 2: Designation ────────────────────────────────────────────────────
-function StepDesignation({ designation, setDesignation, onBack, onNext }: {
+function StepDesignation({ designation, setDesignation, projects, onBack, onNext }: {
   designation: Designation; setDesignation: (v: Designation) => void
+  projects: DonateProjectOption[]
   onBack: () => void; onNext: () => void
 }) {
   const opts = [
@@ -252,7 +253,7 @@ function OtherWaysToGive() {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
-export function DonateForm() {
+export function DonateForm({ projects }: { projects: DonateProjectOption[] }) {
   const [step, setStep] = useState(0)
   const [amount, setAmount] = useState(100)
   const [custom, setCustom] = useState('')
@@ -297,7 +298,7 @@ export function DonateForm() {
           <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 48, alignItems: 'start' }}>
             <div style={{ background: 'var(--c-surface)', border: '1px solid var(--c-line)', padding: '40px' }}>
               {step === 0 && <StepAmount amount={amount} setAmount={setAmount} custom={custom} setCustom={setCustom} frequency={frequency} setFrequency={setFrequency} onNext={() => finalAmount > 0 && setStep(1)} />}
-              {step === 1 && <StepDesignation designation={designation} setDesignation={setDesignation} onBack={() => setStep(0)} onNext={() => setStep(2)} />}
+              {step === 1 && <StepDesignation designation={designation} setDesignation={setDesignation} projects={projects} onBack={() => setStep(0)} onNext={() => setStep(2)} />}
               {step === 2 && <StepInfo info={info} setInfo={setInfo} onBack={() => setStep(1)} onNext={() => setStep(3)} />}
               {step === 3 && <StepReview amount={finalAmount} matched={matched} frequency={frequency} designation={designationLabel} info={info} onBack={() => setStep(2)} onConfirm={() => setStep(4)} />}
               {step === 4 && <StepThanks amount={finalAmount} matched={matched} info={info} />}

@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Project } from '@/data/content'
+import { Project } from '@/lib/cms/projects'
 import { Placeholder } from '@/components/ui/Placeholder'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { ProjectCard } from '@/components/ui/ProjectCard'
@@ -28,28 +28,29 @@ function DetailLine({ label, value }: { label: string; value: string }) {
 }
 
 function ProjectHeroImage({ project: p }: { project: Project }) {
-  if (p.slug === 'main-house') {
+  const imgs = p.heroImages
+  if (imgs.length === 0) {
+    return <Placeholder label={p.placeholder} aspect="pano" />
+  }
+  if (imgs.length === 1) {
     return (
       <div style={{ position: 'relative', aspectRatio: '21 / 9', overflow: 'hidden', border: '1px solid var(--c-line)' }}>
-        <Image src="/images/main-house.jpg" alt={p.title} fill style={{ objectFit: 'cover', objectPosition: 'center 45%' }} />
+        <Image src={imgs[0].downloadUrl} alt={imgs[0].alt || p.title} fill style={{ objectFit: 'cover' }} />
       </div>
     )
   }
-  if (p.slug === 'cooper-conner-house') {
-    return (
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, border: '1px solid var(--c-line)' }}>
-        <figure style={{ margin: 0, position: 'relative', aspectRatio: '4 / 5', overflow: 'hidden' }}>
-          <Image src="/images/cooper-conner-day.jpg" alt={`${p.title} — daylight`} fill style={{ objectFit: 'cover' }} />
-          <figcaption className="dateline" style={{ position: 'absolute', left: 14, bottom: 14, padding: '6px 10px', background: 'var(--c-surface)', fontSize: 11 }}>By day</figcaption>
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(imgs.length, 2)}, 1fr)`, gap: 2, border: '1px solid var(--c-line)' }}>
+      {imgs.map((im, i) => (
+        <figure key={i} style={{ margin: 0, position: 'relative', aspectRatio: '4 / 5', overflow: 'hidden' }}>
+          <Image src={im.downloadUrl} alt={im.alt || p.title} fill style={{ objectFit: 'cover' }} />
+          {im.caption && (
+            <figcaption className="dateline" style={{ position: 'absolute', left: 14, bottom: 14, padding: '6px 10px', background: 'var(--c-surface)', fontSize: 11 }}>{im.caption}</figcaption>
+          )}
         </figure>
-        <figure style={{ margin: 0, position: 'relative', aspectRatio: '4 / 5', overflow: 'hidden' }}>
-          <Image src="/images/cooper-conner-night.jpg" alt={`${p.title} — at night`} fill style={{ objectFit: 'cover' }} />
-          <figcaption className="dateline" style={{ position: 'absolute', left: 14, bottom: 14, padding: '6px 10px', background: 'var(--c-surface)', fontSize: 11 }}>By night</figcaption>
-        </figure>
-      </div>
-    )
-  }
-  return <Placeholder label={p.placeholder} aspect="pano" />
+      ))}
+    </div>
+  )
 }
 
 export function ProjectDetailPage({ project: p, others }: { project: Project; others: Project[] }) {

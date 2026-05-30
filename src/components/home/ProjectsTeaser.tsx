@@ -1,12 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { projects } from '@/data/content'
+import { Project } from '@/lib/cms/projects'
 import { ProjectCard } from '@/components/ui/ProjectCard'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { useTweaks } from '@/context/TweaksContext'
 
-export function ProjectsTeaser() {
+export function ProjectsTeaser({ projects }: { projects: Project[] }) {
   const { tweaks } = useTweaks()
   const items = projects.slice(0, 3)
   return (

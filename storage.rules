@@ -15,6 +15,14 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
+    // Structured-collection images (projects, news, …) uploaded by editors.
+    match /content/{allPaths=**} {
+      allow read: if true;
+      allow write: if isEditor()
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
     // Existing photos collection assets.
     match /photos/{allPaths=**} {
       allow read: if true;

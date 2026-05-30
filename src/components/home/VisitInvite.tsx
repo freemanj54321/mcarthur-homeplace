@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import { events } from '@/data/content'
+import { EventItem } from '@/lib/cms/events'
 
-export function VisitInvite() {
+export function VisitInvite({ events }: { events: EventItem[] }) {
   const items = events.slice(0, 3)
   return (
     <section className="section" style={{ background: 'var(--c-primary)', color: 'var(--tartan-cream)' }}>

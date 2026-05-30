@@ -10,7 +10,9 @@ export type UploadedImage = {
 }
 
 type Props = {
-  pageId: string
+  /** Storage path prefix for uploads. Defaults to `pages/${pageId}`. */
+  pageId?: string
+  pathPrefix?: string
   value: { storagePath: string; downloadUrl: string; alt?: string } | null
   onChange: (image: UploadedImage | null) => void
   altValue?: string
@@ -18,7 +20,7 @@ type Props = {
   label?: string
 }
 
-export function ImageUploader({ pageId, value, onChange, altValue, onAltChange, label = 'Image' }: Props) {
+export function ImageUploader({ pageId, pathPrefix, value, onChange, altValue, onAltChange, label = 'Image' }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,7 +30,8 @@ export function ImageUploader({ pageId, value, onChange, altValue, onAltChange, 
     setError(null)
     try {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-      const storagePath = `pages/${pageId}/${crypto.randomUUID()}-${safeName}`
+      const prefix = pathPrefix ?? `pages/${pageId}`
+      const storagePath = `${prefix}/${crypto.randomUUID()}-${safeName}`
       const storageRef = ref(storage, storagePath)
       await uploadBytes(storageRef, file, { contentType: file.type })
       const downloadUrl = await getDownloadURL(storageRef)

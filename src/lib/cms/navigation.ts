@@ -2,7 +2,7 @@ import 'server-only'
 import { FieldValue } from 'firebase-admin/firestore'
 import { z } from 'zod'
 import { adminDb } from '@/lib/firebase-admin'
-import { projects } from '@/data/content'
+import { projectsStore } from '@/lib/cms/projects'
 
 const COL = 'navigation'
 
@@ -98,29 +98,37 @@ const DEFAULT_FOOTER: FooterNavInput = {
   ],
 }
 
-function resolveDynamicChildren(item: NavItem): ResolvedNavItem {
+function resolveDynamicChildren(item: NavItem, projectLinks: NavLink[]): ResolvedNavItem {
   if (!item.dynamicChildren) {
     const { dynamicChildren: _, ...rest } = item
     return rest
   }
   if (item.dynamicChildren === 'projects') {
-    // Phase 4 will swap this for a Firestore read of the projects collection.
-    const dynamic: NavLink[] = projects.map((p) => ({
-      id: `dyn-${p.slug}`,
-      label: p.title,
-      href: `/what-to-see/${p.slug}`,
-      kind: 'internal',
-    }))
     const fixed = item.children ?? []
     return {
       id: item.id,
       label: item.label,
       href: item.href,
       kind: item.kind,
-      children: [...fixed, ...dynamic],
+      children: [...fixed, ...projectLinks],
     }
   }
   return item
+}
+
+async function getProjectNavLinks(): Promise<NavLink[]> {
+  try {
+    const published = await projectsStore.listPublished()
+    return published.map((p) => ({
+      id: `dyn-${p.slug}`,
+      label: p.title,
+      href: `/what-to-see/${p.slug}`,
+      kind: 'internal' as const,
+    }))
+  } catch {
+    // Service account unavailable (e.g. local dev without env). Empty dropdown.
+    return []
+  }
 }
 
 export async function getPrimaryNav(): Promise<ResolvedPrimaryNav> {
@@ -134,10 +142,11 @@ export async function getPrimaryNav(): Promise<ResolvedPrimaryNav> {
   } catch {
     // Service account unavailable (e.g. local dev without env). Use defaults.
   }
+  const projectLinks = await getProjectNavLinks()
   return {
     utility: raw.utility,
-    left: raw.left.map(resolveDynamicChildren),
-    right: raw.right.map(resolveDynamicChildren),
+    left: raw.left.map((item) => resolveDynamicChildren(item, projectLinks)),
+    right: raw.right.map((item) => resolveDynamicChildren(item, projectLinks)),
   }
 }
 

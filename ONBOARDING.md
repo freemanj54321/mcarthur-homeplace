@@ -1,6 +1,8 @@
 # W. T. McArthur Historic Homeplace — Project Overview
 
-> Last Updated: 2026-05-26
+> **Canonical copy lives in Notion** ([Project Overview](https://www.notion.so/37066661a975815e994acfb3e3d2d276), under Documentation). This file is a synced local mirror, imported into agent context via `@ONBOARDING.md` in `CLAUDE.md`. When the overview changes, update **both** this file and the Notion page.
+
+> Last Updated: 2026-05-29
 
 ---
 
@@ -19,7 +21,7 @@ A **content-forward public website** with a **Firestore-backed admin CMS** for e
 1. **Public site** — storytelling, property showcase, events, donations
 2. **Admin dashboard** (`/admin`) — authenticated CMS for board members/editors to manage navigation, footer, and pages without touching code
 
-The public site still reads some content from `src/data/content.ts` (the What to See property descriptions, news, events, board members). The CMS layer governs navigation structure and will progressively replace hardcoded content in later phases.
+All site content is now Firestore-backed and editable from `/admin` — admin-created pages (`pages` collection) and the structured collections (`projects`, `news`, `events`, `milestones`, `boardMembers`, `partners`), plus navigation and footer. There is no longer a hardcoded `content.ts`.
 
 ---
 
@@ -75,8 +77,6 @@ src/
 │   └── about/                     # AboutDonateStrip
 ├── context/
 │   └── TweaksContext.tsx          # Temporary design-switching state
-├── data/
-│   └── content.ts                 # Hardcoded content (What to See items, news, events, board)
 └── lib/
     ├── firebase.ts                # Client-side Firebase init (Firestore, Storage)
     ├── firebase-admin.ts          # Server-side Admin SDK (Auth, Firestore, Storage)
@@ -87,6 +87,10 @@ src/
     └── cms/
         ├── navigation.ts          # Nav config CRUD — Firestore `navigation` collection
         ├── pages.ts               # Page CRUD — Firestore `pages` collection
+        ├── collectionStore.ts     # Generic publish-model store factory for structured collections
+        ├── projects.ts / news.ts / events.ts / milestones.ts / board.ts / partners.ts
+        │                          # Structured collection schemas + store instances
+        ├── structuredFields.ts    # Client-safe field specs driving the admin forms
         ├── sections.ts            # Zod schemas for all section types
         └── sanitize.ts            # HTML sanitization for rich-text sections
 ```
@@ -99,9 +103,11 @@ Navigation (Header/Footer)
     │   └── fetched at request time by server components in layout.tsx
     └── Falls back to hardcoded defaults in navigation.ts if Firestore unavailable
 
-Property / What to See content
-    └── src/data/content.ts → imported directly into page components
-        (Phase 4 will migrate to Firestore `pages` collection)
+Structured content (projects, news, events, milestones, board, partners)
+    └── Firestore collections via lib/cms/<collection>.ts (createCollectionStore)
+        ├── listPublished() / getPublishedBySlug() → public pages (server components)
+        └── list() / getById() → /admin/structured editor
+        Each doc has a draft/published status + publishedSnapshot, like pages.
 
 CMS Pages (admin-created)
     └── Firestore `pages` collection
@@ -116,7 +122,7 @@ Photos
 
 ### Navigation Architecture
 
-Navigation data lives in Firestore (`navigation/primary` and `navigation/footer`) with hardcoded defaults in `src/lib/cms/navigation.ts`. The `What to See` nav item uses `dynamicChildren: 'projects'` to auto-expand from the `projects` array (Phase 4 will expand from Firestore instead). Editors can modify nav structure, labels, hrefs, and add/remove items via `/admin/navigation`.
+Navigation data lives in Firestore (`navigation/primary` and `navigation/footer`) with hardcoded defaults in `src/lib/cms/navigation.ts`. The `What to See` nav item uses `dynamicChildren: 'projects'` to auto-expand from the published `projects` Firestore collection at request time. Editors can modify nav structure, labels, hrefs, and add/remove items via `/admin/navigation`.
 
 ---
 
@@ -154,9 +160,9 @@ Two-row layout:
 
 ## Key Architectural Decisions
 
-### 1. Content is partly hardcoded, partly Firestore — by phase
+### 1. All content is Firestore-backed
 
-`src/data/content.ts` still holds the What to See property entries, news, events, board members, and milestones. This is intentional for the current phase. The CMS (`pages` collection) governs admin-created pages. Future phases will migrate `content.ts` data to Firestore.
+There is no hardcoded content file. Narrative pages live in the `pages` collection; structured records (projects, news, events, milestones, board, partners) live in their own collections behind a generic `createCollectionStore` factory (`src/lib/cms/collectionStore.ts`). Every structured record carries a draft/published status and a `publishedSnapshot`, just like pages, and is edited at `/admin/structured`.
 
 ### 2. TweaksPanel is a temporary design tool
 
@@ -172,7 +178,7 @@ Server-side CMS operations (reading/writing nav, pages, auth verification) use `
 
 ### 5. Navigation is CMS-editable; What to See dropdown is dynamic
 
-The `What to See` nav item expands its dropdown from `projects` in `content.ts` at request time (via `dynamicChildren: 'projects'` in the nav config). When content.ts is replaced by Firestore, Phase 4 will swap the resolver to read the `pages` collection instead.
+The `What to See` nav item expands its dropdown from the published `projects` Firestore collection at request time (via `dynamicChildren: 'projects'` in the nav config; resolved in `src/lib/cms/navigation.ts`).
 
 ---
 
@@ -236,7 +242,7 @@ CMS-managed pages with draft/publish workflow.
 
 Items with lipsum are awaiting real historical content — the structure is in place.
 
-**Board Members (6):** see `content.ts` — `boardMembers` array
+**Board Members (6):** `boardMembers` Firestore collection (edit at `/admin/structured/boardMembers`)
 
 **Timeline Milestones (7):** 1893 (property acquired) → 1900 (Main House complete) → … → 2026
 
@@ -249,8 +255,8 @@ Items with lipsum are awaiting real historical content — the structure is in p
 | 1 | Admin auth, dashboard shell, login | Shipped 2026-05-19 |
 | 2 | Navigation editor (primary + footer) | Shipped 2026-05-19 |
 | 2b | CMS pages CRUD (create, edit, publish) | Shipped 2026-05-19 |
-| 3 | Migrate home/about/visit/donate/stories from content.ts to Firestore pages | Planned |
-| 4 | Migrate What to See from content.ts to Firestore; swap dynamic nav resolver | Planned |
+| 3 | Migrate home/about/visit/donate/stories from content.ts to Firestore pages | Shipped 2026-05-21 |
+| 4 | Migrate structured collections (projects, news, events, milestones, board, partners) to Firestore + typed admin CRUD; swap dynamic nav resolver; delete content.ts | Shipped 2026-05-29 |
 | 5 | Photo upload UI in admin | Planned |
 | 6 | Donation backend (Stripe) | Planned |
 | 7 | Event registration | Not started |
@@ -330,7 +336,7 @@ npm run dev
 
 | File | Purpose |
 |---|---|
-| [src/data/content.ts](src/data/content.ts) | Hardcoded What to See items, news, events, board members |
+| [src/lib/cms/collectionStore.ts](src/lib/cms/collectionStore.ts) | Generic store factory for structured collections (projects, news, events, milestones, board, partners) |
 | [src/lib/firebase.ts](src/lib/firebase.ts) | Client-side Firebase init |
 | [src/lib/firebase-admin.ts](src/lib/firebase-admin.ts) | Server-side Admin SDK — needs `FIREBASE_SERVICE_ACCOUNT_JSON` |
 | [src/lib/cms/navigation.ts](src/lib/cms/navigation.ts) | Nav CRUD + hardcoded defaults |

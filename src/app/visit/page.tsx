@@ -1,9 +1,11 @@
 import Link from 'next/link'
-import { events } from '@/data/content'
+import { eventsStore } from '@/lib/cms/events'
 
 export const metadata = { title: 'Plan a Visit — W.T. McArthur Historic Homeplace Foundation' }
+export const revalidate = 60
 
-export default function VisitPage() {
+export default async function VisitPage() {
+  const events = await eventsStore.listPublished()
   return (
     <main className="page fade-in" style={{ padding: '120px 0' }}>
       <div className="container" style={{ textAlign: 'center' }}>

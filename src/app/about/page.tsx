@@ -1,16 +1,23 @@
-import { milestones, board, partners } from '@/data/content'
 import { TartanRule } from '@/components/ui/TartanRule'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { AboutDonateStrip } from '@/components/about/AboutDonateStrip'
 import { getPublishedPage } from '@/lib/cms/pages'
 import { SectionsRenderer } from '@/components/cms/PageRenderer'
+import { milestonesStore } from '@/lib/cms/milestones'
+import { boardStore } from '@/lib/cms/board'
+import { partnersStore } from '@/lib/cms/partners'
 
 export const revalidate = 60
 
 export const metadata = { title: 'Our Story — W.T. McArthur Historic Homeplace Foundation' }
 
 export default async function AboutPage() {
-  const page = await getPublishedPage('about').catch(() => null)
+  const [page, milestones, board, partners] = await Promise.all([
+    getPublishedPage('about').catch(() => null),
+    milestonesStore.listPublished(),
+    boardStore.listPublished(),
+    partnersStore.listPublished(),
+  ])
   const snap = page?.publishedSnapshot ?? (page ? { title: page.title, hero: page.hero, sections: page.sections } : null)
   const sections = snap?.sections ?? []
 
@@ -101,7 +108,7 @@ export default async function AboutPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 32, alignItems: 'center' }}>
             <div className="eyebrow">In partnership with</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, fontFamily: 'var(--f-display)', fontStyle: 'italic', fontSize: 18, color: 'var(--c-text-muted)' }}>
-              {partners.map((p, i) => <span key={p}>{p}{i < partners.length - 1 ? ' ·' : ''}</span>)}
+              {partners.map((p, i) => <span key={p.id}>{p.name}{i < partners.length - 1 ? ' ·' : ''}</span>)}
             </div>
           </div>
         </div>

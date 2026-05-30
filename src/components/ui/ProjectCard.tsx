@@ -2,23 +2,16 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Project } from '@/data/content'
+import { Project } from '@/lib/cms/projects'
 import { CardLayout } from '@/context/TweaksContext'
 import { Placeholder } from './Placeholder'
 
 function ProjectImage({ project: p, aspect = 'photo' }: { project: Project; aspect?: string }) {
   const ratio = aspect === 'portrait' ? '3 / 4' : aspect === 'square' ? '1 / 1' : aspect === 'wide' ? '16 / 9' : '4 / 3'
-  if (p.slug === 'main-house') {
+  if (p.cardImage) {
     return (
       <div style={{ position: 'relative', aspectRatio: ratio, overflow: 'hidden' }}>
-        <Image src="/images/main-house.jpg" alt={p.title} fill style={{ objectFit: 'cover', objectPosition: 'center 45%' }} />
-      </div>
-    )
-  }
-  if (p.slug === 'cooper-conner-house') {
-    return (
-      <div style={{ position: 'relative', aspectRatio: ratio, overflow: 'hidden' }}>
-        <Image src="/images/cooper-conner-day.jpg" alt={p.title} fill style={{ objectFit: 'cover', objectPosition: 'center 55%' }} />
+        <Image src={p.cardImage.downloadUrl} alt={p.cardImage.alt || p.title} fill style={{ objectFit: 'cover' }} />
       </div>
     )
   }
