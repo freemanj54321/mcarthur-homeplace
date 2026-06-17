@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Project } from '@/lib/cms/projects'
+import { type PhotoRecord } from '@/lib/photos'
 import { Placeholder } from '@/components/ui/Placeholder'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { ProjectCard } from '@/components/ui/ProjectCard'
@@ -53,7 +54,15 @@ function ProjectHeroImage({ project: p }: { project: Project }) {
   )
 }
 
-export function ProjectDetailPage({ project: p, others }: { project: Project; others: Project[] }) {
+export function ProjectDetailPage({
+  project: p,
+  others,
+  photos = [],
+}: {
+  project: Project
+  others: Project[]
+  photos?: PhotoRecord[]
+}) {
   const { tweaks } = useTweaks()
   return (
     <main className="page fade-in">
@@ -114,6 +123,38 @@ export function ProjectDetailPage({ project: p, others }: { project: Project; ot
                   <h3 className="display" style={{ fontSize: 22, fontWeight: 500, lineHeight: 1.2, marginTop: 10 }}>{f.label}</h3>
                   <p className="muted" style={{ fontSize: 14, marginTop: 14, flex: 1 }}>{f.body}</p>
                 </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {photos.length > 0 && (
+        <section className="section" style={{ background: 'var(--c-bg-alt)' }}>
+          <div className="container">
+            <SectionHead eyebrow="Photo gallery" title="A closer <em>look.</em>" />
+            <div style={{
+              marginTop: 40,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: 16,
+            }}>
+              {photos.map((photo) => (
+                <figure key={photo.id} style={{ margin: 0 }}>
+                  <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', border: '1px solid var(--c-line)' }}>
+                    <Image
+                      src={photo.downloadUrl}
+                      alt={photo.altText || photo.caption || p.title}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                    />
+                  </div>
+                  {photo.caption && (
+                    <figcaption className="muted" style={{ fontSize: 13, marginTop: 8, lineHeight: 1.45 }}>
+                      {photo.caption}
+                    </figcaption>
+                  )}
+                </figure>
               ))}
             </div>
           </div>

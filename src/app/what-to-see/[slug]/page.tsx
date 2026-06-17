@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { projectsStore } from '@/lib/cms/projects'
+import { listPhotosByProject } from '@/lib/cms/photosAdmin'
 import { ProjectDetailPage } from '@/components/projects/ProjectDetailPage'
 
 export const revalidate = 60
@@ -21,8 +22,12 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function ProjectPage({ params }: Props) {
   const { slug } = await params
-  const project = await projectsStore.getPublishedBySlug(slug)
+  const [project, allPublished, photos] = await Promise.all([
+    projectsStore.getPublishedBySlug(slug),
+    projectsStore.listPublished(),
+    listPhotosByProject(slug),
+  ])
   if (!project) notFound()
-  const others = (await projectsStore.listPublished()).filter((p) => p.slug !== slug).slice(0, 3)
-  return <ProjectDetailPage project={project} others={others} />
+  const others = allPublished.filter((p) => p.slug !== slug).slice(0, 3)
+  return <ProjectDetailPage project={project} others={others} photos={photos} />
 }

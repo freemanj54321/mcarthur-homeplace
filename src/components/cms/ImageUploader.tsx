@@ -7,6 +7,7 @@ import { storage } from '@/lib/firebase'
 export type UploadedImage = {
   storagePath: string
   downloadUrl: string
+  filename: string
 }
 
 type Props = {
@@ -35,7 +36,7 @@ export function ImageUploader({ pageId, pathPrefix, value, onChange, altValue, o
       const storageRef = ref(storage, storagePath)
       await uploadBytes(storageRef, file, { contentType: file.type })
       const downloadUrl = await getDownloadURL(storageRef)
-      onChange({ storagePath, downloadUrl })
+      onChange({ storagePath, downloadUrl, filename: file.name })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload failed')
     } finally {

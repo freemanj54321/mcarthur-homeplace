@@ -1,6 +1,27 @@
 import { collection, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore'
 import { db } from './firebase'
 
+export const PHOTO_CATEGORIES = ['exterior', 'interior', 'detail', 'landscape', 'archival'] as const
+export type PhotoCategory = (typeof PHOTO_CATEGORIES)[number]
+
+/** Serializable photo shape safe to pass as props to client components. */
+export type PhotoRecord = {
+  id: string
+  filename: string
+  storagePath: string
+  downloadUrl: string
+  caption: string
+  altText: string
+  project: string | null
+  category: PhotoCategory
+  featured: boolean
+  order: number
+  dateTaken: string
+  updatedAt: number
+  uploadedAt: number
+}
+
+/** Legacy client-SDK type (still used for client-side queries). */
 export interface PhotoDoc {
   id: string
   filename: string
@@ -9,7 +30,7 @@ export interface PhotoDoc {
   caption: string
   altText: string
   project: string | null
-  category: 'exterior' | 'interior' | 'detail' | 'landscape' | 'archival'
+  category: PhotoCategory
   featured: boolean
   order: number
   dateTaken: Timestamp | null
