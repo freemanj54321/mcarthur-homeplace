@@ -17,7 +17,13 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - run: npm ci
+      # `npm install` (not `npm ci`): the dependency graph pulls in optional
+      # native/WASM bindings (unrs-resolver via eslint-config-next, Rolldown's
+      # wasm binding via Vitest) whose hoisted versions differ per-platform.
+      # npm's lockfile omits cross-platform optional deps, so `npm ci` fails on
+      # the Linux runner with a Windows-generated lock. `npm install` resolves
+      # for the runner platform and honors the committed lock where compatible.
+      - run: npm install
 
       - uses: actions/cache@v4
         with:
