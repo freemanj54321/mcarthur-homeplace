@@ -35,9 +35,9 @@ export default defineConfig({
       // the target remains ~70% as the lib backfill (Test Coverage & QA) lands.
       thresholds: {
         lines: 24,
-        functions: 22,
-        statements: 22,
-        branches: 15,
+        functions: 33,
+        statements: 24,
+        branches: 23,
       },
     },
     projects: [
