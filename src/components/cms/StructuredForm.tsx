@@ -7,7 +7,7 @@ import {
   emptyValues,
   type CollectionMeta,
   type FieldSpec,
-} from '@/lib/cms/structuredFields'
+} from '@/lib/content-schema'
 import { saveStructuredAction } from '@/app/admin/structured/actions'
 
 type ContentImage = { storagePath: string; downloadUrl: string; alt: string; caption?: string }

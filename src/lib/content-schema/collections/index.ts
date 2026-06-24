@@ -1,0 +1,6 @@
+export * from './projects'
+export * from './news'
+export * from './events'
+export * from './milestones'
+export * from './board'
+export * from './partners'

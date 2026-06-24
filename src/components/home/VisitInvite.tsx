@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { EventItem } from '@/lib/cms/events'
+import { EventItem } from '@/lib/content-schema'
 
 export function VisitInvite({ events }: { events: EventItem[] }) {
   const items = events.slice(0, 3)

@@ -1,8 +1,7 @@
 import 'server-only'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase-admin'
-import { PageDraftInput, Section, type PageDoc, type PageStatus } from './sections'
-import { sanitizeHtml } from './sanitize'
+import { PageDraftInput, Section, sanitizeHtml, type PageDoc, type PageStatus } from '@/lib/content-schema'
 
 const COL = 'pages'
 
