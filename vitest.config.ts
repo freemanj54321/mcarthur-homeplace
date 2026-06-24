@@ -29,15 +29,15 @@ export default defineConfig({
       // lib surface, not just imported files.
       include: ['src/lib/**/*.ts'],
       exclude: ['src/lib/firebase.ts', 'src/lib/firebase-admin.ts', '**/*.d.ts'],
-      // RAMP FLOOR — NOT the target. WS0 ships the gate mechanism with only
-      // smoke tests, so these floors sit just under current actuals and act as
-      // a no-regression ratchet. WS1 (MCA-19) writes the lib tests and raises
-      // these toward ~70%. Raise the floor each time real coverage climbs.
+      // RATCHET FLOOR — NOT the target. New/changed code ships with its own
+      // tests (see AGENTS.md), so these floors sit just under current actuals
+      // and act as a no-regression ratchet. Raise them whenever coverage climbs;
+      // the target remains ~70% as the lib backfill (Test Coverage & QA) lands.
       thresholds: {
-        lines: 10,
-        functions: 15,
-        statements: 10,
-        branches: 8,
+        lines: 23,
+        functions: 33,
+        statements: 24,
+        branches: 23,
       },
     },
     projects: [
