@@ -2,24 +2,7 @@ import 'server-only'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { z } from 'zod'
 import { adminDb } from '@/lib/firebase-admin'
-
-export type Status = 'draft' | 'published'
-
-/** Full document as stored — editable input fields plus the publish envelope. */
-export type StoredDoc<TInput> = TInput & {
-  id: string
-  order: number
-  status: Status
-  publishedSnapshot: TInput | null
-  publishedAt: number | null
-  createdBy: string
-  createdAt: number
-  updatedBy: string
-  updatedAt: number
-}
-
-/** The published view consumed by public pages: input fields + identity only. */
-export type PublicDoc<TInput> = TInput & { id: string; order: number }
+import type { Status, StoredDoc, PublicDoc } from '@/lib/content-schema'
 
 function tsToMillis(value: unknown): number | null {
   if (value instanceof Timestamp) return value.toMillis()

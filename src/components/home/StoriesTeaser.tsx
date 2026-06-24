@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { NewsItem } from '@/lib/cms/news'
+import { NewsItem } from '@/lib/content-schema'
 import { Placeholder } from '@/components/ui/Placeholder'
 import { SectionHead } from '@/components/ui/SectionHead'
 
