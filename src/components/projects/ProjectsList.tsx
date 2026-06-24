@@ -1,6 +1,6 @@
 'use client'
 
-import { Project } from '@/lib/cms/projects'
+import { Project } from '@/lib/content-schema'
 import { ProjectCard } from '@/components/ui/ProjectCard'
 import { DonateStrip } from '@/components/ui/DonateStrip'
 import { useTweaks } from '@/context/TweaksContext'

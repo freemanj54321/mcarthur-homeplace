@@ -1,12 +1,20 @@
 import 'server-only'
 import type { z } from 'zod'
-import { projectsStore, ProjectInput } from '@/lib/cms/projects'
-import { newsStore, NewsInput } from '@/lib/cms/news'
-import { eventsStore, EventInput } from '@/lib/cms/events'
-import { milestonesStore, MilestoneInput } from '@/lib/cms/milestones'
-import { boardStore, BoardMemberInput } from '@/lib/cms/board'
-import { partnersStore, PartnerInput } from '@/lib/cms/partners'
-import type { StoredDoc } from '@/lib/cms/collectionStore'
+import { projectsStore } from '@/lib/cms/projects'
+import { newsStore } from '@/lib/cms/news'
+import { eventsStore } from '@/lib/cms/events'
+import { milestonesStore } from '@/lib/cms/milestones'
+import { boardStore } from '@/lib/cms/board'
+import { partnersStore } from '@/lib/cms/partners'
+import {
+  ProjectInput,
+  NewsInput,
+  EventInput,
+  MilestoneInput,
+  BoardMemberInput,
+  PartnerInput,
+  type StoredDoc,
+} from '@/lib/content-schema'
 
 /** Minimal store surface used by the generic admin actions/list. */
 type AnyStore = {

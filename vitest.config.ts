@@ -34,7 +34,7 @@ export default defineConfig({
       // and act as a no-regression ratchet. Raise them whenever coverage climbs;
       // the target remains ~70% as the lib backfill (Test Coverage & QA) lands.
       thresholds: {
-        lines: 23,
+        lines: 24,
         functions: 33,
         statements: 24,
         branches: 23,

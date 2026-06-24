@@ -1,6 +1,5 @@
 import Image from 'next/image'
-import { sanitizeHtml } from '@/lib/cms/sanitize'
-import type { Section } from '@/lib/cms/sections'
+import { sanitizeHtml, type Section } from '@/lib/content-schema'
 import './page-renderer.css'
 
 type PageRendererProps = {

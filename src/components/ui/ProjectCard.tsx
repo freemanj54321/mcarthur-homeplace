@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Project } from '@/lib/cms/projects'
+import { Project } from '@/lib/content-schema'
 import { CardLayout } from '@/context/TweaksContext'
 import { Placeholder } from './Placeholder'
 

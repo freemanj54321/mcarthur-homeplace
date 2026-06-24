@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Project } from '@/lib/cms/projects'
+import { Project } from '@/lib/content-schema'
 import { type PhotoRecord } from '@/lib/photos'
 import { Placeholder } from '@/components/ui/Placeholder'
 import { SectionHead } from '@/components/ui/SectionHead'

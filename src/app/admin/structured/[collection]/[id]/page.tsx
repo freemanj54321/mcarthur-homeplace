@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { requireEditor } from '@/lib/auth/server'
-import { COLLECTIONS } from '@/lib/cms/structuredFields'
+import { COLLECTIONS } from '@/lib/content-schema'
 import { StructuredForm } from '@/components/cms/StructuredForm'
 import { getEntry } from '../../registry'
 

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Project } from '@/lib/cms/projects'
+import { Project } from '@/lib/content-schema'
 import { ProjectCard } from '@/components/ui/ProjectCard'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { useTweaks } from '@/context/TweaksContext'

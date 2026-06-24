@@ -13,7 +13,7 @@ import {
   type PageDraftInput,
   type Section,
   type SectionType,
-} from '@/lib/cms/sections'
+} from '@/lib/content-schema'
 import {
   deletePageAction,
   publishPageAction,

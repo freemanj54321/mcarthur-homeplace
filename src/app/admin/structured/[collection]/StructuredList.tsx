@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { CollectionMeta } from '@/lib/cms/structuredFields'
+import type { CollectionMeta } from '@/lib/content-schema'
 import {
   deleteStructuredAction,
   publishStructuredAction,

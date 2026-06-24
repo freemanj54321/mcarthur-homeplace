@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { requireEditor } from '@/lib/auth/server'
-import { COLLECTIONS } from '@/lib/cms/structuredFields'
+import { COLLECTIONS } from '@/lib/content-schema'
 
 export const dynamic = 'force-dynamic'
 

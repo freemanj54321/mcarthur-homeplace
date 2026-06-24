@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { requireEditor } from '@/lib/auth/server'
-import { PageDraftInput } from '@/lib/cms/sections'
+import { PageDraftInput } from '@/lib/content-schema'
 import {
   createPage,
   deletePage as deletePageDoc,
