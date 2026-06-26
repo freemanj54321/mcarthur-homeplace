@@ -23,6 +23,12 @@ function loadServiceAccount(): ServiceAccount {
   }
 }
 
+// The Admin SDK auto-connects to the Emulator Suite when these hosts are set.
+// In that mode it does not need real service-account credentials, so we skip
+// the FIREBASE_SERVICE_ACCOUNT_JSON requirement and init with the project id
+// only. Used by E2E (WS2) and the emulator seed script.
+const usingEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST)
+
 let adminApp: App | undefined
 function getAdminApp(): App {
   if (adminApp) return adminApp
@@ -31,10 +37,20 @@ function getAdminApp(): App {
     adminApp = existing[0]
     return adminApp
   }
-  adminApp = initializeApp({
-    credential: cert(loadServiceAccount()),
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  })
+  adminApp = initializeApp(
+    usingEmulator
+      ? {
+          projectId:
+            process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ??
+            process.env.GCLOUD_PROJECT ??
+            'demo-mcarthur',
+          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        }
+      : {
+          credential: cert(loadServiceAccount()),
+          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        },
+  )
   return adminApp
 }
 
