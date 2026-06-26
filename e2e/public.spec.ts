@@ -4,10 +4,12 @@ import { SEED } from './fixtures'
 /**
  * WS2 (MCA-20) — public-facing flows.
  *
- * Tests marked `test.fixme` are scaffolded but not yet implemented: their
- * assertions depend on selectors/flows still to be finalised in the next pass.
- * The active tests are the smoke checks that prove the harness + emulator seed
- * are wired correctly end to end.
+ * DONE: the three active tests below (home renders, published page renders,
+ * draft 404s) pass against a real emulator + Chromium run.
+ *
+ * TODO(MCA-20): tests marked `test.fixme` are scaffolded but not yet
+ * implemented — their assertions depend on selectors/flows still to be
+ * finalised in the next pass.
  */
 
 test.describe('public site', () => {

@@ -4,10 +4,13 @@ import { SEED } from './fixtures'
 /**
  * WS2 (MCA-20) — admin / CMS flows.
  *
- * The auth-redirect check is hermetic (middleware-only, no session cookie) and
- * runs today. The authenticated flows are scaffolded as `test.fixme`: they need
- * an emulator-backed editor sign-in helper (Auth emulator + __session cookie),
- * which lands in the next pass.
+ * DONE: the two auth-redirect checks below are hermetic (middleware-only, no
+ * session cookie) and pass against a real emulator + Chromium run.
+ *
+ * TODO(MCA-20): every authenticated flow is scaffolded as `test.fixme` — they
+ * all need an emulator-backed editor sign-in helper (Auth emulator +
+ * `__session` cookie, reused via storageState) before they can run for real.
+ * That helper is the next concrete piece of work on this issue.
  */
 
 test.describe('admin auth gate', () => {

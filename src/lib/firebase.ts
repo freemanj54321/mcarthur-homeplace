@@ -20,10 +20,11 @@ export const auth = getAuth(app)
 export const db = getFirestore(app)
 export const storage = getStorage(app)
 
-// E2E / local development against the Firebase Emulator Suite. Opt-in via
-// NEXT_PUBLIC_FIREBASE_USE_EMULATOR=true so production builds never connect to
-// a local emulator. Only wire up once (first app init) to avoid the
-// "already connected" warnings the SDK emits on repeat calls under HMR.
+// WS2 (MCA-20) — DONE. E2E / local development against the Firebase Emulator
+// Suite. Opt-in via NEXT_PUBLIC_FIREBASE_USE_EMULATOR=true so production
+// builds never connect to a local emulator. Only wire up once (first app
+// init) to avoid the "already connected" warnings the SDK emits on repeat
+// calls under HMR.
 if (isNewApp && process.env.NEXT_PUBLIC_FIREBASE_USE_EMULATOR === 'true') {
   const host = process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST ?? '127.0.0.1'
   connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true })

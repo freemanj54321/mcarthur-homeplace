@@ -31,7 +31,8 @@ const chromiumExecutable = resolveChromiumExecutable()
 
 /**
  * Playwright config for WS2 (MCA-20) — hermetic E2E against the Firebase
- * Emulator Suite.
+ * Emulator Suite. Status: DONE — verified passing against a real emulator +
+ * Chromium run (see e2e/README.md for the npm scripts).
  *
  * The emulators are started by the `test:e2e` wrapper:
  *   firebase emulators:exec --only auth,firestore,storage 'playwright test'

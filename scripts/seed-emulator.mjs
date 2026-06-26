@@ -7,6 +7,11 @@
  *   - a draft page (must 404 publicly)
  *   - a published project (drives the "What to See" dynamic nav dropdown)
  *
+ * Status: DONE for the currently-active specs. TODO(MCA-20): extend this seed
+ * when filling in the test.fixme flows in e2e/admin.spec.ts — e.g. a
+ * Storage-emulator object for the photo-upload test, and a custom-claim or
+ * session-cookie helper so the seeded editor can actually sign in.
+ *
  * Intended to run inside `firebase emulators:exec`, which sets
  * FIRESTORE_EMULATOR_HOST / FIREBASE_AUTH_EMULATOR_HOST so the Admin SDK talks
  * to the emulator and needs no real credentials. Safe to re-run: it clears the

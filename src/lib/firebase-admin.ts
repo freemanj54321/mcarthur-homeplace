@@ -23,10 +23,10 @@ function loadServiceAccount(): ServiceAccount {
   }
 }
 
-// The Admin SDK auto-connects to the Emulator Suite when these hosts are set.
-// In that mode it does not need real service-account credentials, so we skip
-// the FIREBASE_SERVICE_ACCOUNT_JSON requirement and init with the project id
-// only. Used by E2E (WS2) and the emulator seed script.
+// WS2 (MCA-20) — DONE. The Admin SDK auto-connects to the Emulator Suite when
+// these hosts are set. In that mode it does not need real service-account
+// credentials, so we skip the FIREBASE_SERVICE_ACCOUNT_JSON requirement and
+// init with the project id only. Used by E2E (WS2) and the emulator seed script.
 const usingEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST)
 
 let adminApp: App | undefined
