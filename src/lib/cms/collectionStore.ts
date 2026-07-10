@@ -21,10 +21,24 @@ export type StoredDoc<TInput> = TInput & {
 /** The published view consumed by public pages: input fields + identity only. */
 export type PublicDoc<TInput> = TInput & { id: string; order: number }
 
+/** Narrow accessor seam: anything that can return a collection ref by name.
+ *  Read operations only need where/orderBy/limit/get/doc — no app-init, no
+ *  credentials required to satisfy this type. Override `db` in StoreOptions
+ *  to point reads at a different Firestore client (e.g. a future content API,
+ *  a plain @google-cloud/firestore instance, or a test double) without
+ *  firebase-admin's credential machinery. */
+export type CollectionAccessor = (
+  name: string,
+) => FirebaseFirestore.CollectionReference<FirebaseFirestore.DocumentData>
+
 function tsToMillis(value: unknown): number | null {
   if (value instanceof Timestamp) return value.toMillis()
   if (typeof value === 'number') return value
   return null
+}
+
+function pick<T extends Record<string, unknown>>(obj: T, fields: (keyof T)[]): Partial<T> {
+  return Object.fromEntries(fields.map((f) => [f, obj[f]])) as Partial<T>
 }
 
 type StoreOptions<TInput extends Record<string, unknown>> = {
@@ -34,6 +48,16 @@ type StoreOptions<TInput extends Record<string, unknown>> = {
   slugField?: keyof TInput & string
   /** Optional sanitiser applied to validated input before writing. */
   sanitize?: (input: TInput) => TInput
+  /** Defaults to `(name) => adminDb().collection(name)`. Override to run the
+   *  store's read path against a different Firestore client without firebase-admin's
+   *  app-init/credential machinery. */
+  db?: CollectionAccessor
+  /** How list() orders docs. Defaults to `{ field: 'order', direction: 'asc' }`.
+   *  Collections with no `order` field (e.g. pages) pass `{ field: 'updatedAt', direction: 'desc' }`. */
+  orderBy?: { field: string; direction: 'asc' | 'desc' }
+  /** Which TInput keys go into publishedSnapshot. Defaults to all of TInput.
+   *  Pass a subset to exclude fields (e.g. pages exclude slug from their snapshot). */
+  snapshotFields?: (keyof TInput)[]
 }
 
 export type CollectionStore<TInput extends Record<string, unknown>> = ReturnType<
@@ -43,8 +67,16 @@ export type CollectionStore<TInput extends Record<string, unknown>> = ReturnType
 export function createCollectionStore<TInput extends Record<string, unknown>>(
   opts: StoreOptions<TInput>,
 ) {
-  const { collection, schema, slugField, sanitize } = opts
-  const col = () => adminDb().collection(collection)
+  const {
+    collection,
+    schema,
+    slugField,
+    sanitize,
+    db = (name) => adminDb().collection(name),
+    orderBy: orderByOpt = { field: 'order', direction: 'asc' },
+    snapshotFields,
+  } = opts
+  const col = () => db(collection)
 
   function toStored(id: string, data: FirebaseFirestore.DocumentData): StoredDoc<TInput> {
     return {
@@ -79,7 +111,13 @@ export function createCollectionStore<TInput extends Record<string, unknown>>(
   async function list(): Promise<StoredDoc<TInput>[]> {
     try {
       const snap = await col().get()
-      return snap.docs.map((d) => toStored(d.id, d.data())).sort((a, b) => a.order - b.order)
+      const docs = snap.docs.map((d) => toStored(d.id, d.data()))
+      const { field, direction } = orderByOpt
+      return docs.sort((a, b) => {
+        const av = (a as Record<string, unknown>)[field] as number ?? 0
+        const bv = (b as Record<string, unknown>)[field] as number ?? 0
+        return direction === 'asc' ? av - bv : bv - av
+      })
     } catch {
       return []
     }
@@ -116,8 +154,10 @@ export function createCollectionStore<TInput extends Record<string, unknown>>(
 
   async function listPublishedSlugs(): Promise<string[]> {
     if (!slugField) throw new Error(`Collection "${collection}" has no slug field`)
-    const published = await listPublished()
-    return published.map((d) => (d as Record<string, unknown>)[slugField] as string)
+    const all = await list()
+    return all
+      .filter((d) => d.status === 'published')
+      .map((d) => (d as Record<string, unknown>)[slugField] as string)
   }
 
   async function nextOrder(): Promise<number> {
@@ -171,9 +211,10 @@ export function createCollectionStore<TInput extends Record<string, unknown>>(
     const snap = await col().doc(id).get()
     if (!snap.exists) throw new Error('Record not found')
     const input = inputOf(snap.data() ?? {})
+    const publishedSnapshot = snapshotFields ? pick(input, snapshotFields) : input
     await col().doc(id).update({
       status: 'published' as Status,
-      publishedSnapshot: input,
+      publishedSnapshot,
       publishedAt: FieldValue.serverTimestamp(),
       updatedBy: editorUid,
       updatedAt: FieldValue.serverTimestamp(),

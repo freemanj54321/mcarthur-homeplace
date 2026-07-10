@@ -18,8 +18,7 @@ export default async function AboutPage() {
     boardStore.listPublished(),
     partnersStore.listPublished(),
   ])
-  const snap = page?.publishedSnapshot ?? (page ? { title: page.title, hero: page.hero, sections: page.sections } : null)
-  const sections = snap?.sections ?? []
+  const sections = page?.sections ?? []
 
   return (
     <main className="page fade-in">
