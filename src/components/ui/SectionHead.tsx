@@ -1,3 +1,5 @@
+import { sanitizeHtml } from '@/lib/cms/sanitize'
+
 interface SectionHeadProps {
   eyebrow?: string
   title: string
@@ -13,7 +15,7 @@ export function SectionHead({ eyebrow, title, lede, align = 'left' }: SectionHea
       <h2
         className="h-section"
         style={{ marginTop: 18, maxWidth: '20ch', marginLeft: isCenter ? 'auto' : 0, marginRight: isCenter ? 'auto' : 0 }}
-        dangerouslySetInnerHTML={{ __html: title }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(title) }}
       />
       {lede && (
         <p className="lead" style={{ marginTop: 18, marginLeft: isCenter ? 'auto' : 0, marginRight: isCenter ? 'auto' : 0 }}>
