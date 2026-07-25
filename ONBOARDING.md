@@ -2,7 +2,7 @@
 
 > **Canonical copy lives in Notion** ([Project Overview](https://www.notion.so/37066661a975815e994acfb3e3d2d276), under Documentation). This file is a synced local mirror, imported into agent context via `@ONBOARDING.md` in `CLAUDE.md`. When the overview changes, update **both** this file and the Notion page.
 
-> Last Updated: 2026-06-24
+> Last Updated: 2026-07-25
 
 ---
 
