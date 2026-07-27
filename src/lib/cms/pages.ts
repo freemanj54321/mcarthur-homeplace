@@ -1,9 +1,12 @@
 import 'server-only'
-import { FieldValue, Timestamp } from 'firebase-admin/firestore'
-import { adminDb } from '@/lib/firebase-admin'
-import { PageDraftInput, Section, sanitizeHtml, type PageDoc, type PageStatus } from '@/lib/content-schema'
-
-const COL = 'pages'
+import {
+  PageDraftInput,
+  Section,
+  sanitizeHtml,
+  type PageDoc,
+  type StoredDoc,
+} from '@/lib/content-schema'
+import { createCollectionStore } from './collectionStore'
 
 function sanitizeSection(section: Section): Section {
   switch (section.type) {
@@ -20,120 +23,104 @@ function sanitizeDraft(input: PageDraftInput): PageDraftInput {
   return { ...input, sections: input.sections.map(sanitizeSection) }
 }
 
-function tsToMillis(value: unknown): number | null {
-  if (value instanceof Timestamp) return value.toMillis()
-  if (typeof value === 'number') return value
-  return null
-}
+/**
+ * `pages` now rides the same generic store as every structured collection
+ * (MCA-26) — it used to be the one hand-rolled outlier. Reads go through the
+ * transport-agnostic reader underneath, so the content API (MCA-53) can serve
+ * pages without the Admin SDK.
+ *
+ * Admin listing is newest-edit-first rather than the default `order` ascending:
+ * pages predate the `order` field and the admin UI has no reorder control.
+ *
+ * Back-compat: pages published before this change stored a NARROWER snapshot
+ * (`title`/`hero`/`sections`, no `slug`) and no `order`. Both are tolerated on
+ * read — `publicView` falls back to live fields and `toStored` defaults a
+ * missing `order` to 0 — so existing documents keep rendering untouched and
+ * simply pick up the wider shape the next time they are published. Normalizing
+ * them is optional tidy-up, folded into the migration copy script (MCA-47)
+ * rather than run as a separate backfill against live production.
+ */
+const store = createCollectionStore<PageDraftInput>({
+  collection: 'pages',
+  schema: PageDraftInput,
+  slugField: 'slug',
+  sanitize: sanitizeDraft,
+  label: 'page',
+  compare: (a, b) => b.updatedAt - a.updatedAt,
+})
 
-function toPageDoc(id: string, data: FirebaseFirestore.DocumentData): PageDoc {
+/**
+ * `StoredDoc` carries the generic envelope; `PageDoc` is its pages-shaped view.
+ * Built field-by-field rather than by spreading so the generic `order` field,
+ * which the pages admin UI does not model, is dropped explicitly.
+ */
+function toPageDoc(doc: StoredDoc<PageDraftInput>): PageDoc {
   return {
-    id,
-    slug: data.slug,
-    title: data.title,
-    hero: data.hero ?? null,
-    sections: (data.sections ?? []) as Section[],
-    status: (data.status ?? 'draft') as PageStatus,
-    publishedSnapshot: data.publishedSnapshot ?? null,
-    publishedAt: tsToMillis(data.publishedAt),
-    createdBy: data.createdBy ?? '',
-    createdAt: tsToMillis(data.createdAt) ?? 0,
-    updatedBy: data.updatedBy ?? '',
-    updatedAt: tsToMillis(data.updatedAt) ?? 0,
+    id: doc.id,
+    slug: doc.slug,
+    title: doc.title,
+    hero: doc.hero,
+    sections: doc.sections,
+    status: doc.status,
+    publishedSnapshot: doc.publishedSnapshot as PageDoc['publishedSnapshot'],
+    publishedAt: doc.publishedAt,
+    createdBy: doc.createdBy,
+    createdAt: doc.createdAt,
+    updatedBy: doc.updatedBy,
+    updatedAt: doc.updatedAt,
   }
 }
 
+/** The renderable published page — snapshot already resolved for the caller. */
+export type PublishedPage = Pick<PageDraftInput, 'title' | 'hero' | 'sections'> & { id: string }
+
 export async function listPages(): Promise<PageDoc[]> {
-  const snap = await adminDb().collection(COL).orderBy('updatedAt', 'desc').get()
-  return snap.docs.map((d) => toPageDoc(d.id, d.data()))
+  return (await store.list()).map(toPageDoc)
 }
 
 export async function getPageById(id: string): Promise<PageDoc | null> {
-  const snap = await adminDb().collection(COL).doc(id).get()
-  if (!snap.exists) return null
-  return toPageDoc(snap.id, snap.data() ?? {})
+  const doc = await store.getById(id)
+  return doc ? toPageDoc(doc) : null
 }
 
-export async function getPublishedPage(slug: string): Promise<PageDoc | null> {
-  const snap = await adminDb()
-    .collection(COL)
-    .where('slug', '==', slug)
-    .where('status', '==', 'published')
-    .limit(1)
-    .get()
-  if (snap.empty) return null
-  return toPageDoc(snap.docs[0].id, snap.docs[0].data())
+/**
+ * Published page for a public route, with `publishedSnapshot` already applied
+ * (falling back to the live fields for pages published before snapshots were
+ * stored). Callers render this directly — they must not re-implement the
+ * fallback, which is how it used to drift between routes.
+ */
+export async function getPublishedPage(slug: string): Promise<PublishedPage | null> {
+  const doc = await store.getPublishedBySlug(slug)
+  if (!doc) return null
+  return { id: doc.id, title: doc.title, hero: doc.hero, sections: doc.sections }
 }
 
+/** Draft-or-published lookup — backs the admin preview route. */
 export async function getPageBySlug(slug: string): Promise<PageDoc | null> {
-  const snap = await adminDb().collection(COL).where('slug', '==', slug).limit(1).get()
-  if (snap.empty) return null
-  return toPageDoc(snap.docs[0].id, snap.docs[0].data())
+  const doc = await store.getBySlug(slug)
+  return doc ? toPageDoc(doc) : null
 }
 
 export async function listPublishedSlugs(): Promise<string[]> {
-  const snap = await adminDb().collection(COL).where('status', '==', 'published').get()
-  return snap.docs.map((d) => d.data().slug as string)
+  return store.listPublishedSlugs()
 }
 
 export async function createPage(input: PageDraftInput, editorUid: string): Promise<string> {
-  const existing = await getPageBySlug(input.slug)
-  if (existing) throw new Error(`A page with slug "${input.slug}" already exists.`)
-  const clean = sanitizeDraft(input)
-  const ref = await adminDb().collection(COL).add({
-    ...clean,
-    status: 'draft' as PageStatus,
-    publishedSnapshot: null,
-    publishedAt: null,
-    createdBy: editorUid,
-    createdAt: FieldValue.serverTimestamp(),
-    updatedBy: editorUid,
-    updatedAt: FieldValue.serverTimestamp(),
-  })
-  return ref.id
+  return store.create(input, editorUid)
 }
 
 export async function updatePage(id: string, input: PageDraftInput, editorUid: string): Promise<void> {
-  const current = await getPageById(id)
-  if (!current) throw new Error('Page not found')
-  if (input.slug !== current.slug) {
-    const conflict = await getPageBySlug(input.slug)
-    if (conflict && conflict.id !== id) throw new Error(`A page with slug "${input.slug}" already exists.`)
-  }
-  const clean = sanitizeDraft(input)
-  await adminDb().collection(COL).doc(id).update({
-    ...clean,
-    updatedBy: editorUid,
-    updatedAt: FieldValue.serverTimestamp(),
-  })
+  return store.update(id, input, editorUid)
 }
 
 export async function publishPage(id: string, editorUid: string): Promise<void> {
-  const current = await getPageById(id)
-  if (!current) throw new Error('Page not found')
-  await adminDb().collection(COL).doc(id).update({
-    status: 'published' as PageStatus,
-    publishedSnapshot: {
-      title: current.title,
-      hero: current.hero,
-      sections: current.sections,
-    },
-    publishedAt: FieldValue.serverTimestamp(),
-    updatedBy: editorUid,
-    updatedAt: FieldValue.serverTimestamp(),
-  })
+  return store.publish(id, editorUid)
 }
 
 export async function unpublishPage(id: string, editorUid: string): Promise<void> {
-  await adminDb().collection(COL).doc(id).update({
-    status: 'draft' as PageStatus,
-    updatedBy: editorUid,
-    updatedAt: FieldValue.serverTimestamp(),
-  })
+  return store.unpublish(id, editorUid)
 }
 
 export async function deletePage(id: string, editorUid: string): Promise<void> {
-  const ref = adminDb().collection(COL).doc(id)
-  await ref.update({ deletedBy: editorUid, updatedBy: editorUid, updatedAt: FieldValue.serverTimestamp() })
-  await ref.delete()
+  return store.remove(id, editorUid)
 }
