@@ -382,6 +382,8 @@ npm run dev
 
 > **Firebase CLI:** `firebase-tools` is a devDependency — run it as `npx firebase …` (no global install needed).
 
+> **Claude Code:** agent rules live in `AGENTS.md`; shared permissions and hooks in `.claude/settings.json` (personal approvals go in `.claude/settings.local.json`, gitignored); `/ship` runs the pre-PR gate. Background and follow-ups: Notion **Claude Code Setup**.
+
 ---
 
 ## Testing
@@ -431,4 +433,7 @@ Never set these in a deployed environment; they would point the app at a non-exi
 | [src/context/TweaksContext.tsx](src/context/TweaksContext.tsx) | Temporary design-switching state (to be removed) |
 | [apphosting.yaml](apphosting.yaml) | Firebase App Hosting runtime config |
 | [vitest.config.ts](vitest.config.ts) | Test projects + coverage ratchet gate |
+| [.claude/settings.json](.claude/settings.json) | Claude Code shared permissions (allow/ask/deny) + eslint PostToolUse hook |
+| [.claude/skills/ship/SKILL.md](.claude/skills/ship/SKILL.md) | `/ship` — pre-PR gate: CI checks, coverage ratchet, doc sync, PR |
+| [.githooks/pre-commit](.githooks/pre-commit) | Bumps ONBOARDING "Last Updated" when this file is committed (needs `core.hooksPath`) |
 | [.github/workflows/deploy.yml](.github/workflows/deploy.yml) | CI gate (lint/type/test/build only — no deploy step) |

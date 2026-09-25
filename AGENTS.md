@@ -28,6 +28,13 @@ Before saying a change is complete, run `npm run lint`, `npx tsc --noEmit`, and 
 * Branch per issue: `mca-<n>-<short-slug>` (e.g. `mca-41-firestore-indexes`); use `chore/<slug>` for work with no issue.
 * Commits: `type(scope): summary (MCA-XX)`, e.g. `feat(firestore): declare required composite indexes (MCA-41)`.
 * Open a PR to `master`; CI must pass before merge.
+* The `/ship` skill runs this whole flow (checks → branch → commit → PR). Prefer it to doing the steps by hand.
+
+# Claude Code configuration
+
+* `.claude/settings.json` (committed) holds the shared permissions and hooks. Personal or machine-specific approvals go in `.claude/settings.local.json` (gitignored), never in the shared file.
+* A PostToolUse hook runs eslint on every file you edit; fix what it reports before moving on.
+* Rationale, history, and open follow-ups: Notion **Claude Code Setup** (https://www.notion.so/3e666661a975812fae76fe98b31d3b5d).
 
 # Documentation lives in Notion
 
