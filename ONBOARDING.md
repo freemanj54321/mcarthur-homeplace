@@ -2,7 +2,7 @@
 
 > **Canonical copy lives in Notion** ([Project Overview](https://www.notion.so/37066661a975815e994acfb3e3d2d276), under Documentation). This file is a synced local mirror, imported into agent context via `@ONBOARDING.md` in `CLAUDE.md`. When the overview changes, update **both** this file and the Notion page.
 
-> Last Updated: 2026-09-25
+> Last Updated: 2026-09-26
 
 ---
 
@@ -305,9 +305,9 @@ Items with lipsum are awaiting real historical content — the structure is in p
 |---|---|---|
 | Codebase Cleanup & Modularization | Dead-code removal, content-schema extraction, transport-agnostic read layer, security/DX fixes | In progress — content-schema extracted; read-layer refactor outstanding |
 | Test Coverage & QA | Vitest harness + coverage ratchet, lib backfill, E2E, security/load testing | In progress — harness and E2E scaffold shipped; lib backfill ongoing |
-| **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | Planned — blocked on foundation Google account + billing. Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
+| **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | Unblocked — foundation Workspace, billing, and nonprofit enrollment done (MCA-37). Project ids locked: `mcarthur-web-dev` / `mcarthur-web-uat` / `mcarthur-web-prod`. Next: provision the projects (MCA-38/39/40). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
 
-> **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Project ids, the storage bucket, and Firestore region are hardcoded in `apphosting.yaml`, `next.config.ts`, `.firebaserc`, and both workflows. Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source).
+> **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Project ids, the storage bucket, and Firestore region are hardcoded in `apphosting.yaml`, `next.config.ts`, `.firebaserc`, and both workflows. Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
 
 ---
 
