@@ -104,8 +104,10 @@ src/
 │   │   └── collections/           # Per-collection Zod schemas + inferred types
 │   └── cms/                       # Firebase-BOUND data access (server-only)
 │       ├── navigation.ts          # Nav config CRUD — Firestore `navigation` collection
-│       ├── pages.ts               # Page CRUD — Firestore `pages` collection
-│       ├── collectionStore.ts     # Generic publish-model store factory
+│       ├── pages.ts               # Page CRUD — `pages` collection, built on collectionStore
+│       ├── collectionStore.ts     # Generic publish-model store factory (Admin SDK write path)
+│       ├── collectionReader.ts    # Transport-agnostic READ layer — no firebase-admin/Next imports (MCA-26)
+│       ├── firestoreReader.ts     # Minimal Firestore read-port types the reader is driven through
 │       ├── photosAdmin.ts         # Photo metadata CRUD (Admin SDK)
 │       ├── action-error.ts        # Error formatting for server actions
 │       └── projects.ts / news.ts / events.ts / milestones.ts / board.ts / partners.ts
@@ -303,7 +305,7 @@ Items with lipsum are awaiting real historical content — the structure is in p
 
 | Initiative | Scope | Status |
 |---|---|---|
-| Codebase Cleanup & Modularization | Dead-code removal, content-schema extraction, transport-agnostic read layer, security/DX fixes | In progress — content-schema extracted; read-layer refactor outstanding |
+| Codebase Cleanup & Modularization | Dead-code removal, content-schema extraction, transport-agnostic read layer, security/DX fixes | In progress — content-schema extracted (MCA-25); transport-agnostic read layer landed (MCA-26), unblocking the content API (MCA-53) |
 | Test Coverage & QA | Vitest harness + coverage ratchet, lib backfill, E2E, security/load testing | In progress — harness and E2E scaffold shipped; lib backfill ongoing |
 | **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | Unblocked — foundation Workspace, billing, and nonprofit enrollment done (MCA-37). Project ids locked: `mcarthur-web-dev` / `mcarthur-web-uat` / `mcarthur-web-prod`. Next: provision the projects (MCA-38/39/40). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
 
@@ -418,7 +420,8 @@ Never set these in a deployed environment; they would point the app at a non-exi
 | [src/lib/content-schema/index.ts](src/lib/content-schema/index.ts) | **Content contract** — all schemas + types, no Firebase/Next/React |
 | [src/lib/content-schema/sections.ts](src/lib/content-schema/sections.ts) | Zod schemas for all page section types |
 | [src/lib/content-schema/doc.ts](src/lib/content-schema/doc.ts) | `StoredDoc` / `PublicDoc` / `Status` envelope types |
-| [src/lib/cms/collectionStore.ts](src/lib/cms/collectionStore.ts) | Generic store factory for structured collections (projects, news, events, milestones, board, partners) |
+| [src/lib/cms/collectionStore.ts](src/lib/cms/collectionStore.ts) | Generic store factory for structured collections (projects, news, events, milestones, board, partners) and pages |
+| [src/lib/cms/collectionReader.ts](src/lib/cms/collectionReader.ts) | Transport-agnostic content read layer — what the content API (MCA-53) will reuse |
 | [src/lib/firebase.ts](src/lib/firebase.ts) | Client-side Firebase init (+ opt-in emulator wiring) |
 | [src/lib/firebase-admin.ts](src/lib/firebase-admin.ts) | Server-side Admin SDK — needs `FIREBASE_SERVICE_ACCOUNT_JSON` (except emulator mode) |
 | [src/lib/cms/navigation.ts](src/lib/cms/navigation.ts) | Nav CRUD + hardcoded defaults |

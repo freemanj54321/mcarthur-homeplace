@@ -26,6 +26,6 @@ export default async function DynamicPage({ params }: Props) {
   const { slug } = await params
   const page = await getPublishedPage(slug.join('/'))
   if (!page) notFound()
-  const snap = page.publishedSnapshot ?? { title: page.title, hero: page.hero, sections: page.sections }
-  return <PageRenderer title={snap.title} hero={snap.hero} sections={snap.sections} />
+  // getPublishedPage already resolves publishedSnapshot vs. live fields.
+  return <PageRenderer title={page.title} hero={page.hero} sections={page.sections} />
 }
