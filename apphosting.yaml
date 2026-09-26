@@ -5,7 +5,8 @@
 # backend (Settings → Environment):
 #   - legacy → apphosting.legacy.yaml: the live mcarthur-tour backend's project
 #     values and Secret Manager references (removed at MCA-59).
-#   - dev    → apphosting.dev.yaml: mcarthur-web-dev (uat/prod follow, MCA-69 / MCA-46).
+#   - dev / uat / prod → apphosting.{dev,uat,prod}.yaml: the mcarthur-web-*
+#     foundation backends (emulator-safety flag only; config is injected).
 #
 # WHY no env vars here: the foundation backends get their Firebase config
 # injected by App Hosting and run keyless (src/lib/firebaseConfig.ts). A secret
