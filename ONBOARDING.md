@@ -37,7 +37,7 @@ All site content is now Firestore-backed and editable from `/admin` — admin-cr
 | Database | Cloud Firestore | Photos, navigation config, CMS pages |
 | Storage | Firebase Storage | Images served from `mcarthur-tour.firebasestorage.app` |
 | Auth | Firebase Auth (Google provider) | Active — used for editor/admin sign-in |
-| Admin SDK | firebase-admin | Server-only; requires `FIREBASE_SERVICE_ACCOUNT_JSON` (skipped in emulator mode) |
+| Admin SDK | firebase-admin | Server-only; credentials from `FIREBASE_SERVICE_ACCOUNT_JSON`, App Hosting's injected config (keyless), or local ADC (see decision 4) |
 | Hosting | Firebase App Hosting (Cloud Run) | 0–2 instances, 512 MB, 80 concurrent connections |
 | Testing | Vitest (node + jsdom) · Playwright + Firebase Emulator Suite | Unit/component under `src/**`, E2E under `e2e/`; coverage ratchet gate |
 | CI/CD | GitHub Actions | Lint → type check → test → build (Firebase deploys natively) |
@@ -89,6 +89,7 @@ src/
 ├── lib/
 │   ├── firebase.ts                # Client-side Firebase init (+ opt-in emulator wiring)
 │   ├── firebase-admin.ts          # Server-side Admin SDK (Auth, Firestore, Storage)
+│   ├── firebaseConfig.ts          # Where each SDK gets its config (explicit vs App Hosting-injected); SDK-free
 │   ├── photos.ts                  # Firestore photo queries (client SDK)
 │   ├── auth/
 │   │   ├── server.ts              # Session verification (server components / actions)
@@ -196,9 +197,18 @@ There is no hardcoded content file. Narrative pages live in the `pages` collecti
 
 Firestore handles navigation config, CMS pages, and photo metadata. Firebase Storage serves images. Firebase Auth handles editor sign-in. Firebase App Hosting runs the Next.js app. No separate API server, no Postgres, no Redis.
 
-### 4. Admin SDK requires a service account (except against the emulator)
+### 4. Firebase config and credentials come from the environment
 
-Server-side CMS operations (reading/writing nav, pages, auth verification) use `firebase-admin` via `src/lib/firebase-admin.ts`. This requires `FIREBASE_SERVICE_ACCOUNT_JSON` as an env var with the full service account JSON. **Without it, the admin dashboard will not work and the CMS nav falls back to defaults.**
+Server-side CMS operations (reading/writing nav, pages, auth verification) use `firebase-admin` via `src/lib/firebase-admin.ts`. How it initializes is decided in `src/lib/firebaseConfig.ts` (MCA-44), in priority order:
+
+1. **Emulator:** `FIRESTORE_EMULATOR_HOST` set (see the exception below).
+2. **Service-account key:** `FIREBASE_SERVICE_ACCOUNT_JSON` set. This is how the current `mcarthur-tour` backend and key-based local dev run.
+3. **App Hosting, keyless:** `FIREBASE_CONFIG` injected by App Hosting. No-arg init uses the backend's own service account, so no key exists. This is the plan for the foundation environments.
+4. **Application Default Credentials:** local dev after `gcloud auth application-default login`.
+
+The browser SDK (`src/lib/firebase.ts`) follows the same rule: explicit `NEXT_PUBLIC_FIREBASE_*` values win; otherwise it uses App Hosting's injected `FIREBASE_WEBAPP_CONFIG`. That works because the Firebase SDK's `postinstall` bakes the config in during `npm install`, so **stay on npm and never set `ignore-scripts`**. `next.config.ts` resolves the Storage bucket for `next/image` the same way.
+
+**Without any credentials, the admin dashboard will not work and the CMS nav falls back to defaults.**
 
 **Exception:** when `FIRESTORE_EMULATOR_HOST` is set, the Admin SDK connects to the Emulator Suite and initialises with a project id only — no credentials needed. This is how E2E and the seed script run. That branch must never be reachable in a deployed environment.
 
@@ -305,7 +315,7 @@ Items with lipsum are awaiting real historical content — the structure is in p
 |---|---|---|
 | Codebase Cleanup & Modularization | Dead-code removal, content-schema extraction, transport-agnostic read layer, security/DX fixes | In progress — content-schema extracted; read-layer refactor outstanding |
 | Test Coverage & QA | Vitest harness + coverage ratchet, lib backfill, E2E, security/load testing | In progress — harness and E2E scaffold shipped; lib backfill ongoing |
-| **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | Unblocked — foundation Workspace, billing, and nonprofit enrollment done (MCA-37). Project ids locked: `mcarthur-web-dev` / `mcarthur-web-uat` / `mcarthur-web-prod`. Next: provision the projects (MCA-38/39/40). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
+| **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | Unblocked — foundation Workspace, billing, and nonprofit enrollment done (MCA-37). Project ids locked: `mcarthur-web-dev` / `mcarthur-web-uat` / `mcarthur-web-prod`. Projects created (MCA-38). Next: Firestore/Storage + rules (MCA-40), web apps (MCA-39), org-policy review (MCA-67). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
 
 > **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Project ids, the storage bucket, and Firestore region are hardcoded in `apphosting.yaml`, `next.config.ts`, `.firebaserc`, and both workflows. Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
 
@@ -376,7 +386,7 @@ npm run dev
 
 > **Admin dashboard:** Visit `/admin` — sign in with a Google account that has been granted editor access in Firebase Auth.
 
-> **Without `FIREBASE_SERVICE_ACCOUNT_JSON`:** The admin dashboard will throw. The public site will still work, but navigation will use hardcoded defaults from `src/lib/cms/navigation.ts`.
+> **Without `FIREBASE_SERVICE_ACCOUNT_JSON`** (and without `gcloud auth application-default login`): the admin dashboard will throw. The public site will still work, but navigation will use hardcoded defaults from `src/lib/cms/navigation.ts`.
 
 > **Next.js 16:** Has breaking changes from prior versions. Read `node_modules/next/dist/docs/` before writing App Router code.
 
@@ -420,7 +430,8 @@ Never set these in a deployed environment; they would point the app at a non-exi
 | [src/lib/content-schema/doc.ts](src/lib/content-schema/doc.ts) | `StoredDoc` / `PublicDoc` / `Status` envelope types |
 | [src/lib/cms/collectionStore.ts](src/lib/cms/collectionStore.ts) | Generic store factory for structured collections (projects, news, events, milestones, board, partners) |
 | [src/lib/firebase.ts](src/lib/firebase.ts) | Client-side Firebase init (+ opt-in emulator wiring) |
-| [src/lib/firebase-admin.ts](src/lib/firebase-admin.ts) | Server-side Admin SDK — needs `FIREBASE_SERVICE_ACCOUNT_JSON` (except emulator mode) |
+| [src/lib/firebase-admin.ts](src/lib/firebase-admin.ts) | Server-side Admin SDK — key, App Hosting keyless, emulator, or ADC (see decision 4) |
+| [src/lib/firebaseConfig.ts](src/lib/firebaseConfig.ts) | Config-source decisions for both SDKs and `next.config.ts` (MCA-44) |
 | [src/lib/cms/navigation.ts](src/lib/cms/navigation.ts) | Nav CRUD + hardcoded defaults |
 | [src/lib/cms/pages.ts](src/lib/cms/pages.ts) | CMS page CRUD |
 | [src/lib/auth/server.ts](src/lib/auth/server.ts) | Session verification for server components |
