@@ -2,8 +2,15 @@ import { initializeApp, getApps } from 'firebase/app'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
+import { hasExplicitWebConfig } from './firebaseConfig'
 
-const firebaseConfig = {
+// MCA-44: explicit NEXT_PUBLIC_* config when provided (local dev, E2E, the CI
+// build, and the legacy mcarthur-tour backend); otherwise the config App Hosting
+// injects via FIREBASE_WEBAPP_CONFIG, which the SDK's postinstall builds into
+// the package so no-arg initializeApp() finds it. That depends on npm running
+// dependency install scripts: stay on npm and never set `ignore-scripts`.
+// Each variable is referenced literally so Next.js inlines it for the browser.
+const explicitConfig = {
   apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -14,7 +21,11 @@ const firebaseConfig = {
 }
 
 const isNewApp = getApps().length === 0
-const app = isNewApp ? initializeApp(firebaseConfig) : getApps()[0]
+const app = !isNewApp
+  ? getApps()[0]
+  : hasExplicitWebConfig(explicitConfig)
+    ? initializeApp(explicitConfig)
+    : initializeApp()
 
 export const auth = getAuth(app)
 export const db = getFirestore(app)

@@ -1,16 +1,19 @@
 import 'server-only'
-import { cert, getApps, initializeApp, type App, type ServiceAccount } from 'firebase-admin/app'
+import {
+  applicationDefault,
+  cert,
+  getApps,
+  initializeApp,
+  type App,
+  type ServiceAccount,
+} from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore } from 'firebase-admin/firestore'
 import { getStorage } from 'firebase-admin/storage'
+import { adminInitMode, resolveStorageBucket } from './firebaseConfig'
 
-function loadServiceAccount(): ServiceAccount {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-  if (!raw) {
-    throw new Error(
-      'FIREBASE_SERVICE_ACCOUNT_JSON is not set. Paste the JSON contents of your service-account key file into this env var.',
-    )
-  }
+// Only reached in 'serviceAccount' mode, which requires the variable to be set.
+function loadServiceAccount(raw: string): ServiceAccount {
   try {
     const parsed = JSON.parse(raw)
     return {
@@ -23,34 +26,46 @@ function loadServiceAccount(): ServiceAccount {
   }
 }
 
-// WS2 (MCA-20) — DONE. The Admin SDK auto-connects to the Emulator Suite when
-// these hosts are set. In that mode it does not need real service-account
-// credentials, so we skip the FIREBASE_SERVICE_ACCOUNT_JSON requirement and
-// init with the project id only. Used by E2E (WS2) and the emulator seed script.
-const usingEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST)
+// The init mode is decided in ./firebaseConfig (unit-tested there):
+// - emulator — WS2 (MCA-20), DONE. The Admin SDK auto-connects to the Emulator
+//   Suite when these hosts are set and needs no credentials, so init with the
+//   project id only. Used by E2E and the emulator seed script.
+// - serviceAccount: the legacy mcarthur-tour backend and key-based local dev.
+// - appHosting: MCA-44. No-arg init reads the injected FIREBASE_CONFIG and uses
+//   the backend's own service account, so no key exists (MCA-39).
+// - applicationDefault: local dev via `gcloud auth application-default login`.
+function buildApp(): App {
+  const storageBucket = resolveStorageBucket(process.env)
+  switch (adminInitMode(process.env)) {
+    case 'emulator':
+      return initializeApp({
+        projectId:
+          process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ??
+          process.env.GCLOUD_PROJECT ??
+          'demo-mcarthur',
+        storageBucket,
+      })
+    case 'serviceAccount':
+      return initializeApp({
+        credential: cert(loadServiceAccount(process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? '')),
+        storageBucket,
+      })
+    case 'appHosting':
+      return initializeApp()
+    case 'applicationDefault':
+      return initializeApp({
+        credential: applicationDefault(),
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? process.env.GOOGLE_CLOUD_PROJECT,
+        storageBucket,
+      })
+  }
+}
 
 let adminApp: App | undefined
 function getAdminApp(): App {
   if (adminApp) return adminApp
   const existing = getApps()
-  if (existing.length > 0) {
-    adminApp = existing[0]
-    return adminApp
-  }
-  adminApp = initializeApp(
-    usingEmulator
-      ? {
-          projectId:
-            process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ??
-            process.env.GCLOUD_PROJECT ??
-            'demo-mcarthur',
-          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        }
-      : {
-          credential: cert(loadServiceAccount()),
-          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        },
-  )
+  adminApp = existing.length > 0 ? existing[0] : buildApp()
   return adminApp
 }
 
