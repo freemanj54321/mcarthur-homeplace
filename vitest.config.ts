@@ -34,13 +34,15 @@ export default defineConfig({
       // and act as a no-regression ratchet. Raise them whenever coverage climbs;
       // the target remains ~70% as the lib backfill (Test Coverage & QA) lands.
       // Raised 2026-07-27 by MCA-26 (transport-agnostic read layer, pages fold,
-      // and their tests) from 24/33/24/23. Actuals then: 52.31 lines /
-      // 58.69 functions / 51.75 statements / 48.1 branches.
+      // and their tests) from 24/33/24/23.
+      // Raised 2026-09-26 by MCA-62 after MCA-26 + MCA-44 (firebaseConfig.ts)
+      // landed. Actuals then: 54.28 lines / 60.82 functions / 54.16 statements /
+      // 51.75 branches.
       thresholds: {
-        lines: 52,
-        functions: 58,
-        statements: 51,
-        branches: 48,
+        lines: 53,
+        functions: 59,
+        statements: 53,
+        branches: 50,
       },
     },
     projects: [
