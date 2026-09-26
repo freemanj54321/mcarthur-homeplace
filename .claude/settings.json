@@ -1,64 +1,52 @@
 {
   "permissions": {
     "allow": [
-      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\freem\\\\Dev\\\\mcarthur-homeplace\" -Directory)",
-      "Bash(Select-Object Name)",
-      "Bash(firebase help *)",
-      "Bash(firebase apphosting:rollouts:create --help)",
-      "Bash(firebase apphosting:backends:create --help)",
-      "Bash(firebase deploy *)",
-      "Bash(firebase apphosting:secrets:set --help)",
-      "Bash(firebase apphosting:backends:list --project mcarthur-tour)",
-      "Bash(firebase apphosting:secrets:grantaccess --help)",
-      "Bash(firebase --help)",
-      "Bash(firebase login *)",
+      "Bash(npm install)",
       "Bash(npm info *)",
-      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\('node', 'no node field'\\), d.get\\('lockfileVersion', 'no lockfileVersion'\\)\\)\")",
-      "Bash(firebase apphosting:secrets:set NEXT_PUBLIC_FIREBASE_API_KEY --project mcarthur-tour --data-file -)",
-      "Bash(firebase apphosting:secrets:set NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN --project mcarthur-tour --data-file -)",
-      "Bash(firebase apphosting:secrets:set NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID --project mcarthur-tour --data-file -)",
-      "Bash(firebase apphosting:secrets:set NEXT_PUBLIC_FIREBASE_APP_ID --project mcarthur-tour --data-file -)",
-      "Bash(firebase apphosting:secrets:set NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID --project mcarthur-tour --data-file -)",
-      "Bash(firebase apphosting:backends:get mcarthur-homeplace --project mcarthur-tour)",
-      "Bash(git commit -m ' *)",
-      "Bash(git push *)",
-      "Bash(npx tsc *)",
-      "Bash(gcloud projects *)",
-      "Bash(gcloud iam *)",
-      "Bash(git config *)",
-      "Bash(Move-Item \"c:\\\\Users\\\\freem\\\\Dev\\\\mcarthur-homeplace\\\\src\\\\app\\\\projects\" \"c:\\\\Users\\\\freem\\\\Dev\\\\mcarthur-homeplace\\\\src\\\\app\\\\what-to-see\")",
-      "Read(//c/Users/freem/Dev/**)",
-      "Bash(eslint)",
-      "Bash(prettier\")",
-      "PowerShell(Get-ChildItem \"node_modules\\\\next\\\\dist\\\\docs\\\\01-app\\\\02-guides\" -Name | Where-Object { $_ -match \"auth|session|cookie|middleware|cms|content|fetching|dynamic|revalidate|isr|caching\" })",
-      "WebFetch(domain:www.dinsmorefarm.org)",
-      "Bash(favicon\")",
-      "Bash(tasklist //FI \"IMAGENAME eq node.exe\" //FO TABLE)",
-      "Bash(wmic process *)",
-      "Bash(taskkill //F //T //PID 35208)",
-      "Bash(npm install *)",
-      "Bash(git remote *)",
-      "mcp__plugin_firebase_firebase__apphosting_fetch_logs",
-      "Bash(node scripts/seed-editor.mjs kwwVP3BnTNNliB1vnhcItLjdr743 freemanj54321@gmail.com \"John Freeman\")",
-      "Bash(Remove-Item \"c:\\\\Users\\\\freem\\\\Dev\\\\mcarthur-homeplace\\\\src\\\\app\\\\stories\\\\page.tsx\")",
-      "Bash(rm -rf .next)",
-      "Bash(npx next *)",
-      "Bash(Test-Path \"C:\\\\Users\\\\freem\\\\Downloads\\\\mcarthur-tour-firebase-adminsdk-fbsvc-b911776d93.json\")",
-      "Bash(ls \"C:/Users/freem/Downloads/mcarthur-tour-firebase-adminsdk-fbsvc-b911776d93.json\" 2>/dev/null && echo \"exists\" || echo \"not found\")",
-      "Read(//c/Users/freem/Downloads/**)",
-      "Bash(SA_PATH=\"C:/Users/freem/Downloads/mcarthur-tour-firebase-adminsdk-fbsvc-b911776d93.json\" node scripts/seed-pages.mjs)",
-      "Bash(mkdir -p \"c:/Users/freem/Dev/mcarthur-homeplace/public/fonts\" && cp \"C:/Users/freem/OneDrive/Dev Learning/McArthurHomeplace App/P22 Morris Golden Regular/P22 Morris Golden Regular.ttf\" \"c:/Users/freem/Dev/mcarthur-homeplace/public/fonts/P22MorrisGold.ttf\")",
-      "mcp__plugin_firebase_firebase__firebase_get_project",
-      "mcp__plugin_firebase_firebase__firebase_read_resources",
-      "Bash(gcloud storage *)",
-      "Bash(gcloud secrets *)",
-      "Bash(firebase apphosting:rollouts:create mcarthur-homeplace --project mcarthur-tour)",
-      "Bash(firebase apphosting:rollouts:create mcarthur-homeplace --git-branch master --project mcarthur-tour)",
+      "Bash(npm run lint)",
+      "Bash(npm test)",
+      "Bash(npm run test)",
+      "Bash(npm run test:coverage)",
+      "Bash(npm run build)",
+      "Bash(npx vitest *)",
+      "Bash(npx eslint *)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(git checkout -b *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr checks *)",
       "mcp__claude_ai_Notion__notion-fetch",
-      "mcp__claude_ai_Notion__notion-create-pages"
+      "mcp__claude_ai_Notion__notion-search",
+      "mcp__claude_ai_Notion__notion-create-pages",
+      "mcp__claude_ai_Notion__notion-update-page"
     ],
-    "additionalDirectories": [
-      "C:\\Users\\freem\\OneDrive\\Dev Learning\\McArthurHomeplace App\\P22 Morris Golden Regular"
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git config *)",
+      "Bash(firebase deploy *)",
+      "Bash(npx firebase deploy *)",
+      "Bash(gcloud *)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Read(./.env*)",
+      "Read(**/*firebase-adminsdk*.json)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lint-edited-file.sh"
+          }
+        ]
+      }
     ]
   }
 }
