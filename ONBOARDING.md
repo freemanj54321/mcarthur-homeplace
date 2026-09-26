@@ -38,7 +38,7 @@ All site content is now Firestore-backed and editable from `/admin` — admin-cr
 | Storage | Firebase Storage | Images served from `mcarthur-tour.firebasestorage.app` |
 | Auth | Firebase Auth (Google provider) | Active — used for editor/admin sign-in |
 | Admin SDK | firebase-admin | Server-only; credentials from `FIREBASE_SERVICE_ACCOUNT_JSON`, App Hosting's injected config (keyless), or local ADC (see decision 4) |
-| Hosting | Firebase App Hosting (Cloud Run) | 0–2 instances, 512 MB, 80 concurrent connections |
+| Hosting | Firebase App Hosting (Cloud Run) | One backend per env (dev/uat/prod), `us-central1`, Node 24; 0–2 instances, 512 MB, 80 concurrent connections |
 | Testing | Vitest (node + jsdom) · Playwright + Firebase Emulator Suite | Unit/component under `src/**`, E2E under `e2e/`; coverage ratchet gate |
 | CI/CD | GitHub Actions | Lint → type check → test → build (Firebase deploys natively) |
 
@@ -317,7 +317,7 @@ Items with lipsum are awaiting real historical content — the structure is in p
 |---|---|---|
 | Codebase Cleanup & Modularization | Dead-code removal, content-schema extraction, transport-agnostic read layer, security/DX fixes | In progress — content-schema extracted (MCA-25); transport-agnostic read layer landed (MCA-26), unblocking the content API (MCA-53) |
 | Test Coverage & QA | Vitest harness + coverage ratchet, lib backfill, E2E, security/load testing | In progress — harness and E2E scaffold shipped; lib backfill ongoing |
-| **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | In progress — foundation Workspace, billing, and nonprofit enrollment done (MCA-37). Projects `mcarthur-web-dev` / `mcarthur-web-uat` / `mcarthur-web-prod` created (MCA-38). Firestore (Standard, `nam5`) and Storage (`us-east1`) created with rules + indexes deployed in all three (MCA-40). Web apps registered (MCA-39). Org policy blocks service-account keys, so deployed envs use App Hosting's injected config and a keyless Admin SDK (MCA-67, MCA-44). Next: App Hosting backends in `us-central1`, dev first (MCA-46). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
+| **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | In progress — foundation Workspace, billing, nonprofit enrollment done (MCA-37). Projects `mcarthur-web-{dev,uat,prod}` (MCA-38), Firestore `nam5` + Storage `us-east1` (MCA-40), web apps (MCA-39). Deployed envs use injected config and a keyless Admin SDK, since org policy blocks keys (MCA-67, MCA-44). **All three App Hosting backends are live** (MCA-46): dev and uat on https at `dev.`/`uat.wtmcarthurhomeplace.org`; prod on the apex + `www`, domain verifying (MCA-52). Next: CI on `develop`/`uat` (MCA-45), sign-in + editors (MCA-51), content migration (MCA-47–49), legacy decommission (MCA-59). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
 
 > **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Its project id and bucket now live only in `apphosting.legacy.yaml` (plus the CI workflows until MCA-45); `next.config.ts` and the SDK init resolve per environment (MCA-44). Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
 
@@ -327,9 +327,18 @@ Items with lipsum are awaiting real historical content — the structure is in p
 
 ### Deployment Model
 
-**Firebase App Hosting deploys natively from GitHub** — no CI step triggers the rollout. Pushes to `master` are picked up by Firebase's GitHub connection automatically.
+**Firebase App Hosting deploys natively from GitHub** — no CI step triggers the rollout. Each backend auto-rolls out when its live branch changes:
 
-GitHub Actions runs **only as a CI gate** (lint, type check, test, build). Because `master` deploys to production, all work lands through PRs.
+| Branch | Environment | Backend (project) | URL |
+|---|---|---|---|
+| `develop` | dev | `web` (`mcarthur-web-dev`) | https://dev.wtmcarthurhomeplace.org |
+| `uat` | uat | `uat` (`mcarthur-web-uat`) | https://uat.wtmcarthurhomeplace.org |
+| `master` | prod | `prod` (`mcarthur-web-prod`) | https://wtmcarthurhomeplace.org (+ `www`) |
+| `master` | legacy | legacy backend (`mcarthur-tour`) | no traffic; decommissioned in MCA-59 |
+
+Code promotes **up** by PR: feature → `develop` → `uat` → `master`. Until MCA-59, a merge to `master` deploys to both prod and legacy.
+
+GitHub Actions runs **only as a CI gate** (lint, type check, test, build). It currently gates PRs into `master` only; adding `develop` and `uat` is MCA-45. All work lands through PRs.
 
 ### Pipelines
 
