@@ -345,8 +345,8 @@ GitHub Actions runs **only as a CI gate** (lint, type check, test, build). Becau
 - `apphosting.yaml` is shared by every backend: 1 CPU, 512 MB memory, 0–2 instances, 80 concurrent connections. **No env vars.** Keep it environment-neutral.
 - Each backend's **Environment** setting (backend → Settings → Environment) selects an override file, merged over the base by variable name:
   - `legacy` → `apphosting.legacy.yaml`: the live `mcarthur-tour` backend's project id, bucket, and Secret Manager references (deleted at decommission, MCA-59).
-  - `dev` → `apphosting.dev.yaml`: `mcarthur-web-dev`. Only the emulator-safety flag; Firebase config is injected by App Hosting and the Admin SDK is keyless (decision 4).
-- App Hosting rules learned the hard way (MCA-44): a secret referenced in the base file fails the build in any project without it, and an override **can't blank** a variable (`value: ""` is rejected). Guard tests: `src/test/apphostingLegacy.test.ts`, `src/test/apphostingDev.test.ts`.
+  - `dev` / `uat` / `prod` → `apphosting.{dev,uat,prod}.yaml`: the `mcarthur-web-*` foundation backends. Only the emulator-safety flag; Firebase config is injected by App Hosting and the Admin SDK is keyless (decision 4). The three files must stay identical apart from comments.
+- App Hosting rules learned the hard way (MCA-44): a secret referenced in the base file fails the build in any project without it, and an override **can't blank** a variable (`value: ""` is rejected). Guard tests: `src/test/apphostingLegacy.test.ts`, `src/test/apphostingFoundation.test.ts`.
 
 ### Secrets Required
 
@@ -448,7 +448,7 @@ Never set these in a deployed environment; they would point the app at a non-exi
 | [src/app/globals.css](src/app/globals.css) | Entire design system |
 | [src/app/admin/layout.tsx](src/app/admin/layout.tsx) | Admin auth guard |
 | [src/context/TweaksContext.tsx](src/context/TweaksContext.tsx) | Temporary design-switching state (to be removed) |
-| [apphosting.yaml](apphosting.yaml) | Shared App Hosting runtime config (no env vars); per-env overrides in `apphosting.{legacy,dev}.yaml` |
+| [apphosting.yaml](apphosting.yaml) | Shared App Hosting runtime config (no env vars); per-env overrides in `apphosting.{legacy,dev,uat,prod}.yaml` |
 | [vitest.config.ts](vitest.config.ts) | Test projects + coverage ratchet gate |
 | [.claude/settings.json](.claude/settings.json) | Claude Code shared permissions (allow/ask/deny) + eslint PostToolUse hook |
 | [.claude/skills/ship/SKILL.md](.claude/skills/ship/SKILL.md) | `/ship` — pre-PR gate: CI checks, coverage ratchet, doc sync, PR |

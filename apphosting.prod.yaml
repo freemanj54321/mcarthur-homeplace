@@ -1,0 +1,19 @@
+# Overrides for the `mcarthur-web-prod` App Hosting backend (MCA-44).
+#
+# App Hosting merges this file over apphosting.yaml for any backend whose
+# Environment (backend → Settings → Environment) is `prod`.
+#
+# DONE: intentionally almost empty. Prod takes its Firebase config from App
+# Hosting's injected FIREBASE_WEBAPP_CONFIG / FIREBASE_CONFIG and runs the Admin
+# SDK keyless (src/lib/firebaseConfig.ts, MCA-44, MCA-67). Don't add Firebase
+# values or secrets here; explicit values would override the injected config.
+#
+# TODO(MCA-57): scaling inherits the shared runConfig (0–2 instances, 512 MB).
+# Revisit for real prod traffic and cost; a runConfig block here overrides it.
+
+env:
+  # Emulator safety (MCA-44 plan delta): a deployed env must never connect the
+  # client SDK to a local emulator.
+  - variable: NEXT_PUBLIC_FIREBASE_USE_EMULATOR
+    value: "false"
+    availability: [BUILD, RUNTIME]
