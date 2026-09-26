@@ -319,7 +319,7 @@ Items with lipsum are awaiting real historical content — the structure is in p
 | Test Coverage & QA | Vitest harness + coverage ratchet, lib backfill, E2E, security/load testing | In progress — harness and E2E scaffold shipped; lib backfill ongoing |
 | **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | In progress — foundation Workspace, billing, and nonprofit enrollment done (MCA-37). Projects `mcarthur-web-dev` / `mcarthur-web-uat` / `mcarthur-web-prod` created (MCA-38). Firestore (Standard, `nam5`) and Storage (`us-east1`) created with rules + indexes deployed in all three (MCA-40). Web apps registered (MCA-39). Org policy blocks service-account keys, so deployed envs use App Hosting's injected config and a keyless Admin SDK (MCA-67, MCA-44). Next: App Hosting backends in `us-central1`, dev first (MCA-46). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
 
-> **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Project ids, the storage bucket, and Firestore region are hardcoded in `apphosting.yaml`, `next.config.ts`, `.firebaserc`, and both workflows. Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
+> **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Its project id and bucket now live only in `apphosting.legacy.yaml` (plus the CI workflows until MCA-45); `next.config.ts` and the SDK init resolve per environment (MCA-44). Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
 
 ---
 
@@ -340,10 +340,13 @@ GitHub Actions runs **only as a CI gate** (lint, type check, test, build). Becau
 
 > E2E (`npm run test:e2e`) is **not yet wired into CI** — it runs locally against the emulator only.
 
-### Firebase App Hosting Config (`apphosting.yaml`)
+### Firebase App Hosting Config (`apphosting*.yaml`)
 
-- 1 CPU, 512 MB memory, 0–2 instances, 80 concurrent connections
-- All env vars stored in Google Secret Manager
+- `apphosting.yaml` is shared by every backend: 1 CPU, 512 MB memory, 0–2 instances, 80 concurrent connections. **No env vars.** Keep it environment-neutral.
+- Each backend's **Environment** setting (backend → Settings → Environment) selects an override file, merged over the base by variable name:
+  - `legacy` → `apphosting.legacy.yaml`: the live `mcarthur-tour` backend's project id, bucket, and Secret Manager references (deleted at decommission, MCA-59).
+  - `dev` → `apphosting.dev.yaml`: `mcarthur-web-dev`. Only the emulator-safety flag; Firebase config is injected by App Hosting and the Admin SDK is keyless (decision 4).
+- App Hosting rules learned the hard way (MCA-44): a secret referenced in the base file fails the build in any project without it, and an override **can't blank** a variable (`value: ""` is rejected). Guard tests: `src/test/apphostingLegacy.test.ts`, `src/test/apphostingDev.test.ts`.
 
 ### Secrets Required
 
@@ -445,7 +448,7 @@ Never set these in a deployed environment; they would point the app at a non-exi
 | [src/app/globals.css](src/app/globals.css) | Entire design system |
 | [src/app/admin/layout.tsx](src/app/admin/layout.tsx) | Admin auth guard |
 | [src/context/TweaksContext.tsx](src/context/TweaksContext.tsx) | Temporary design-switching state (to be removed) |
-| [apphosting.yaml](apphosting.yaml) | Firebase App Hosting runtime config |
+| [apphosting.yaml](apphosting.yaml) | Shared App Hosting runtime config (no env vars); per-env overrides in `apphosting.{legacy,dev}.yaml` |
 | [vitest.config.ts](vitest.config.ts) | Test projects + coverage ratchet gate |
 | [.claude/settings.json](.claude/settings.json) | Claude Code shared permissions (allow/ask/deny) + eslint PostToolUse hook |
 | [.claude/skills/ship/SKILL.md](.claude/skills/ship/SKILL.md) | `/ship` — pre-PR gate: CI checks, coverage ratchet, doc sync, PR |

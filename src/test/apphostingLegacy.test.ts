@@ -1,38 +1,17 @@
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { describe, it, expect } from 'vitest'
+import { readApphostingFile, readEnv, type EnvEntry } from './apphostingEnv'
 
-// MCA-44 — DONE. Guard for `apphosting.legacy.yaml`, which YAML can't self-document.
+// MCA-44 — DONE. Guards for `apphosting.yaml` (shared) and
+// `apphosting.legacy.yaml` (live mcarthur-tour backend, Environment = `legacy`).
 //
-// WHY this test exists: the live mcarthur-tour backend is moving from the shared
-// apphosting.yaml to this file (Environment = `legacy`). Every entry it relies
-// on must be here with exactly the same value/secret, or the live site builds
-// with missing or different config once the base entries are removed.
+// WHY: the live site now reads its project values and Secret Manager references
+// from the legacy file only. If an entry is dropped there, the live site builds
+// with missing config. If anything creeps back into the shared base file, every
+// foundation backend fails to build (a missing secret) or silently runs against
+// mcarthur-tour.
 
-type EnvEntry = { variable: string; value?: string; secret?: string; availability?: string }
-
-// Minimal reader for the `env:` list shape App Hosting uses. A real YAML parser
-// is only a transitive dependency here, so this avoids relying on it.
-function readEnv(file: string): EnvEntry[] {
-  const text = readFileSync(fileURLToPath(new URL(`../../${file}`, import.meta.url)), 'utf8')
-  const entries: EnvEntry[] = []
-  for (const line of text.split('\n')) {
-    const variable = line.match(/^\s*-\s*variable:\s*(\S+)/)
-    if (variable) {
-      entries.push({ variable: variable[1] })
-      continue
-    }
-    const field = line.match(/^\s+(value|secret|availability):\s*(.*?)\s*$/)
-    if (field && entries.length > 0) {
-      const key = field[1] as 'value' | 'secret' | 'availability'
-      entries[entries.length - 1][key] = field[2].replace(/^"(.*)"$/, '$1')
-    }
-  }
-  return entries
-}
-
-// The mcarthur-tour config as it stood before the move (MCA-44). Pinned here so
-// the test still protects the live site after the base file is emptied.
+// The mcarthur-tour config as it stood before the move. Pinned here so the live
+// site stays protected now that the base file no longer carries it.
 const LEGACY_CONFIG: EnvEntry[] = [
   { variable: 'NEXT_PUBLIC_FIREBASE_PROJECT_ID', value: 'mcarthur-tour', availability: '[BUILD, RUNTIME]' },
   {
@@ -52,17 +31,25 @@ const LEGACY_CONFIG: EnvEntry[] = [
   { variable: 'FIREBASE_SERVICE_ACCOUNT_JSON', secret: 'FIREBASE_SERVICE_ACCOUNT_JSON', availability: '[RUNTIME]' },
 ]
 
-const legacy = readEnv('apphosting.legacy.yaml')
-
 describe('apphosting.legacy.yaml', () => {
   it('carries exactly the live mcarthur-tour config', () => {
-    expect(legacy).toEqual(LEGACY_CONFIG)
+    expect(readEnv('apphosting.legacy.yaml')).toEqual(LEGACY_CONFIG)
+  })
+})
+
+describe('apphosting.yaml (shared base)', () => {
+  it('declares no env vars, so nothing environment-specific leaks into every backend', () => {
+    expect(readEnv('apphosting.yaml')).toEqual([])
   })
 
-  it('matches every mcarthur-tour entry still in the base file (no drift during the move)', () => {
-    const legacyByName = new Map(legacy.map((e) => [e.variable, e]))
-    for (const entry of readEnv('apphosting.yaml')) {
-      expect(legacyByName.get(entry.variable), entry.variable).toEqual(entry)
-    }
+  it('never mentions the legacy or emulator project ids', () => {
+    const withoutComments = readApphostingFile('apphosting.yaml').replace(/#.*$/gm, '')
+    expect(withoutComments).not.toMatch(/mcarthur-tour|demo-mcarthur/)
+  })
+
+  it('keeps the shared runtime limits', () => {
+    const text = readApphostingFile('apphosting.yaml')
+    expect(text).toMatch(/^runConfig:/m)
+    expect(text).toMatch(/maxInstances:\s*2/)
   })
 })
