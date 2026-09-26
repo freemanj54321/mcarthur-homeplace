@@ -1,0 +1,57 @@
+# Overrides for the LEGACY `mcarthur-tour` App Hosting backend (MCA-44).
+#
+# App Hosting merges this file over apphosting.yaml, matching variables by name,
+# for any backend whose Environment (backend → Settings → Environment) is
+# `legacy`. Only the live personal-account mcarthur-tour backend uses that name.
+#
+# WHY this file exists: the foundation backends (mcarthur-web-dev/uat/prod) get
+# their Firebase config injected by App Hosting and run keyless, so they need
+# none of these values. An environment file can only REPLACE a base variable,
+# not remove it (App Hosting rejects `value: ""`), and a base secret reference
+# fails the build in any project where that secret doesn't exist. So the
+# mcarthur-tour-specific values have to live here, not in the shared base file.
+#
+# Migration order (MCA-44):
+#   1. DONE when merged: this file duplicates the entries still in apphosting.yaml,
+#      so nothing changes for the live site.
+#   2. TODO(MCA-44): set the mcarthur-tour backend's Environment to `legacy`.
+#   3. TODO(MCA-44): remove these entries from apphosting.yaml.
+# TODO(MCA-59): delete this file when mcarthur-tour is decommissioned.
+
+env:
+  # Non-sensitive identifiers — safe to hardcode
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: mcarthur-tour
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: mcarthur-tour.firebasestorage.app
+    availability: [BUILD, RUNTIME]
+
+  # Sensitive values — stored in mcarthur-tour's Secret Manager.
+  #   firebase apphosting:secrets:set <NAME> --project legacy
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: NEXT_PUBLIC_FIREBASE_API_KEY
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    secret: NEXT_PUBLIC_FIREBASE_APP_ID
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    secret: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    availability: [BUILD, RUNTIME]
+
+  # Server-only credential used by the Admin SDK (key-based; the foundation
+  # projects block key creation and run keyless instead).
+  - variable: FIREBASE_SERVICE_ACCOUNT_JSON
+    secret: FIREBASE_SERVICE_ACCOUNT_JSON
+    availability: [RUNTIME]
