@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "mcarthur-tour"
+    "dev": "mcarthur-web-dev",
+    "uat": "mcarthur-web-uat",
+    "prod": "mcarthur-web-prod",
+    "legacy": "mcarthur-tour"
   }
 }
