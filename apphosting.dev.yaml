@@ -1,0 +1,58 @@
+# Overrides for the `mcarthur-web-dev` App Hosting backend (MCA-44).
+#
+# App Hosting merges this file over apphosting.yaml, matching variables by name,
+# for any backend whose Environment (backend → Settings → Environment) is `dev`.
+# The live mcarthur-tour backend doesn't use that name, so it never sees this file.
+#
+# WHY every variable is blanked: the base file is the legacy mcarthur-tour
+# config (its project id, bucket, and six Secret Manager references). None of
+# those secrets exist in mcarthur-web-dev, and dev must not use mcarthur-tour
+# values. An empty value counts as "not set" in src/lib/firebaseConfig.ts, so
+# dev takes App Hosting's injected FIREBASE_WEBAPP_CONFIG / FIREBASE_CONFIG and
+# a keyless Admin SDK instead (MCA-44, MCA-67).
+#
+# TODO(MCA-46): confirm on the first dev rollout that App Hosting accepts empty
+# values. If it rejects them, put dev's public web config here instead (values
+# in MCA-39). The browser then takes the explicit path, which also works.
+#
+# Keep in sync: src/test/apphostingDev.test.ts fails if a variable is added to
+# apphosting.yaml without a matching blank override here.
+
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: ""
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: ""
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: ""
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: ""
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: ""
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: ""
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: ""
+    availability: [BUILD, RUNTIME]
+
+  - variable: FIREBASE_SERVICE_ACCOUNT_JSON
+    value: ""
+    availability: [RUNTIME]
+
+  # Emulator safety (MCA-44 plan delta): a deployed env must never connect the
+  # client SDK to a local emulator.
+  - variable: NEXT_PUBLIC_FIREBASE_USE_EMULATOR
+    value: "false"
+    availability: [BUILD, RUNTIME]
