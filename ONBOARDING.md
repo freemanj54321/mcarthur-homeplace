@@ -2,7 +2,7 @@
 
 > **Canonical copy lives in Notion** ([Project Overview](https://www.notion.so/37066661a975815e994acfb3e3d2d276), under Documentation). This file is a synced local mirror, imported into agent context via `@ONBOARDING.md` in `CLAUDE.md`. When the overview changes, update **both** this file and the Notion page.
 
-> Last Updated: 2026-07-27
+> Last Updated: 2026-09-26
 
 ---
 
@@ -19,7 +19,7 @@ The **W. T. McArthur Historic Homeplace, Inc.** is a nonprofit heritage foundati
 A **content-forward public website** with a **Firestore-backed admin CMS** for editors. Two distinct surfaces:
 
 1. **Public site** — storytelling, property showcase, events, donations
-2. **Admin dashboard** (`/admin`) — authenticated CMS for board members/editors to manage navigation, footer, and pages without touching code
+2. **Admin dashboard** (`/admin`) — authenticated CMS for board members/editors to manage navigation, footer, pages, structured content, and photos without touching code
 
 All site content is now Firestore-backed and editable from `/admin` — admin-created pages (`pages` collection) and the structured collections (`projects`, `news`, `events`, `milestones`, `boardMembers`, `partners`), plus navigation and footer. There is no longer a hardcoded `content.ts`.
 
@@ -37,9 +37,10 @@ All site content is now Firestore-backed and editable from `/admin` — admin-cr
 | Database | Cloud Firestore | Photos, navigation config, CMS pages |
 | Storage | Firebase Storage | Images served from `mcarthur-tour.firebasestorage.app` |
 | Auth | Firebase Auth (Google provider) | Active — used for editor/admin sign-in |
-| Admin SDK | firebase-admin | Server-only; requires `FIREBASE_SERVICE_ACCOUNT_JSON` env var |
+| Admin SDK | firebase-admin | Server-only; requires `FIREBASE_SERVICE_ACCOUNT_JSON` (skipped in emulator mode) |
 | Hosting | Firebase App Hosting (Cloud Run) | 0–2 instances, 512 MB, 80 concurrent connections |
-| CI/CD | GitHub Actions | Lint → type check → build (Firebase deploys natively) |
+| Testing | Vitest (node + jsdom) · Playwright + Firebase Emulator Suite | Unit/component under `src/**`, E2E under `e2e/`; coverage ratchet gate |
+| CI/CD | GitHub Actions | Lint → type check → test → build (Firebase deploys natively) |
 
 ---
 
@@ -68,8 +69,16 @@ src/
 │       │   ├── page.tsx
 │       │   ├── new/page.tsx
 │       │   └── [id]/page.tsx
+│       ├── structured/            # Typed CRUD for structured collections
+│       │   ├── registry.ts        # Collection name → store + field spec
+│       │   └── [collection]/      # List, new, [id] edit per collection
+│       ├── photos/                # Photo library: upload, edit, categorize
+│       │   ├── new/page.tsx
+│       │   └── [id]/page.tsx
 │       └── preview/[...slug]/     # Draft preview before publish
 ├── components/
+│   ├── auth/                      # AuthProvider
+│   ├── cms/                       # PageRenderer, SectionEditor, StructuredForm, PhotoForm, ImageUploader, RichTextField
 │   ├── ui/                        # Header, Footer, BrandMark, ClientShell, TweaksPanel, etc.
 │   ├── home/                      # Hero variants, MissionSection, ProjectsTeaser, etc.
 │   ├── projects/                  # ProjectsList, ProjectDetailPage
@@ -77,22 +86,39 @@ src/
 │   └── about/                     # AboutDonateStrip
 ├── context/
 │   └── TweaksContext.tsx          # Temporary design-switching state
-└── lib/
-    ├── firebase.ts                # Client-side Firebase init (Firestore, Storage)
-    ├── firebase-admin.ts          # Server-side Admin SDK (Auth, Firestore, Storage)
-    ├── photos.ts                  # Firestore photo queries
-    ├── auth/
-    │   ├── server.ts              # Session verification (server components / actions)
-    │   └── client.ts              # Firebase Auth helpers (sign in, sign out)
-    └── cms/
-        ├── navigation.ts          # Nav config CRUD — Firestore `navigation` collection
-        ├── pages.ts               # Page CRUD — Firestore `pages` collection
-        ├── collectionStore.ts     # Generic publish-model store factory for structured collections
-        ├── projects.ts / news.ts / events.ts / milestones.ts / board.ts / partners.ts
-        │                          # Structured collection schemas + store instances
-        ├── structuredFields.ts    # Client-safe field specs driving the admin forms
-        ├── sections.ts            # Zod schemas for all section types
-        └── sanitize.ts            # HTML sanitization for rich-text sections
+├── lib/
+│   ├── firebase.ts                # Client-side Firebase init (+ opt-in emulator wiring)
+│   ├── firebase-admin.ts          # Server-side Admin SDK (Auth, Firestore, Storage)
+│   ├── photos.ts                  # Firestore photo queries (client SDK)
+│   ├── auth/
+│   │   ├── server.ts              # Session verification (server components / actions)
+│   │   └── client.ts              # Firebase Auth helpers (sign in, sign out)
+│   ├── content-schema/            # Framework-agnostic content CONTRACT (see decision 6)
+│   │   ├── index.ts               # Barrel — import everything from '@/lib/content-schema'
+│   │   ├── version.ts             # CONTENT_SCHEMA_VERSION
+│   │   ├── doc.ts                 # StoredDoc / PublicDoc / Status envelope types
+│   │   ├── sections.ts            # Zod schemas for all page section types
+│   │   ├── media.ts               # ContentImage + slug schema
+│   │   ├── sanitize.ts            # HTML sanitization for rich-text sections
+│   │   ├── structuredFields.ts    # Client-safe field specs driving the admin forms
+│   │   └── collections/           # Per-collection Zod schemas + inferred types
+│   └── cms/                       # Firebase-BOUND data access (server-only)
+│       ├── navigation.ts          # Nav config CRUD — Firestore `navigation` collection
+│       ├── pages.ts               # Page CRUD — `pages` collection, built on collectionStore
+│       ├── collectionStore.ts     # Generic publish-model store factory (Admin SDK write path)
+│       ├── collectionReader.ts    # Transport-agnostic READ layer — no firebase-admin/Next imports (MCA-26)
+│       ├── firestoreReader.ts     # Minimal Firestore read-port types the reader is driven through
+│       ├── photosAdmin.ts         # Photo metadata CRUD (Admin SDK)
+│       ├── action-error.ts        # Error formatting for server actions
+│       └── projects.ts / news.ts / events.ts / milestones.ts / board.ts / partners.ts
+│                                  # Store INSTANCES only — schemas live in content-schema/
+└── test/                          # Vitest harness: in-memory Firestore + firebase-admin mock
+
+e2e/                               # Playwright specs (run against the Firebase Emulator Suite)
+scripts/                           # seed-editor / seed-pages / seed-structured / seed-emulator
+middleware.ts                      # /admin session redirect — Next 16 deprecates `middleware` in favor of `proxy`
+firestore.indexes.json             # Composite index declarations (deployed per environment)
+playwright.config.ts               # E2E config — emulator-backed, project `demo-mcarthur`
 ```
 
 ### Data Flow
@@ -115,9 +141,9 @@ CMS Pages (admin-created)
         └── getPageById(id) → admin editor
 
 Photos
-    └── Firestore `photos` collection → queried via lib/photos.ts
-        ├── getProjectPhotos(slug)
-        └── getFeaturedPhotos()
+    └── Firestore `photos` collection
+        ├── lib/photos.ts (client SDK) → getProjectPhotos(slug), getFeaturedPhotos()
+        └── lib/cms/photosAdmin.ts (Admin SDK) → /admin/photos editor
 ```
 
 ### Navigation Architecture
@@ -172,13 +198,25 @@ There is no hardcoded content file. Narrative pages live in the `pages` collecti
 
 Firestore handles navigation config, CMS pages, and photo metadata. Firebase Storage serves images. Firebase Auth handles editor sign-in. Firebase App Hosting runs the Next.js app. No separate API server, no Postgres, no Redis.
 
-### 4. Admin SDK requires a service account
+### 4. Admin SDK requires a service account (except against the emulator)
 
-Server-side CMS operations (reading/writing nav, pages, auth verification) use `firebase-admin` via `src/lib/firebase-admin.ts`. This requires `FIREBASE_SERVICE_ACCOUNT_JSON` as an env var with the full service account JSON. **Without it, the admin dashboard will not work and the CMS nav fallback to defaults.**
+Server-side CMS operations (reading/writing nav, pages, auth verification) use `firebase-admin` via `src/lib/firebase-admin.ts`. This requires `FIREBASE_SERVICE_ACCOUNT_JSON` as an env var with the full service account JSON. **Without it, the admin dashboard will not work and the CMS nav falls back to defaults.**
+
+**Exception:** when `FIRESTORE_EMULATOR_HOST` is set, the Admin SDK connects to the Emulator Suite and initialises with a project id only — no credentials needed. This is how E2E and the seed script run. That branch must never be reachable in a deployed environment.
 
 ### 5. Navigation is CMS-editable; What to See dropdown is dynamic
 
 The `What to See` nav item expands its dropdown from the published `projects` Firestore collection at request time (via `dynamicChildren: 'projects'` in the nav config; resolved in `src/lib/cms/navigation.ts`).
+
+### 6. Content schema is a framework-agnostic contract
+
+`src/lib/content-schema/` holds every Zod schema, inferred type, and the `StoredDoc`/`PublicDoc` envelope, with **zero Firebase / Next.js / React imports** — only `zod` and `isomorphic-dompurify`. `src/lib/cms/` keeps the Firebase-bound data access on top of it.
+
+This split is deliberate: it is the single source of truth for content shape, so a planned content API and a future mobile app can consume the same contract without pulling in Firebase. `CONTENT_SCHEMA_VERSION` exists so the contract can be versioned independently of the site.
+
+### 7. Composite indexes are declared in the repo
+
+`firestore.indexes.json` declares the composite indexes the photo queries require (`project + order`, `featured + order`). They must be deployed to every environment. **A missing index fails silently** — the photo queries catch errors and return `[]`, so galleries render blank while the page still loads fine. `src/test/firestoreIndexes.test.ts` guards against accidental removal.
 
 ---
 
@@ -208,7 +246,7 @@ CMS-managed pages with draft/publish workflow.
 | `publishedAt` | timestamp\|null | |
 | `createdBy` / `updatedBy` | string | Firebase Auth UID |
 
-**Section types:** `richText`, `twoColumn`, `quote`, `callout`, `image`, `gallery` — all validated by Zod schemas in [src/lib/cms/sections.ts](src/lib/cms/sections.ts).
+**Section types:** `richText`, `twoColumn`, `quote`, `callout`, `image`, `gallery` — all validated by Zod schemas in [src/lib/content-schema/sections.ts](src/lib/content-schema/sections.ts).
 
 ### `photos` collection
 
@@ -257,9 +295,21 @@ Items with lipsum are awaiting real historical content — the structure is in p
 | 2b | CMS pages CRUD (create, edit, publish) | Shipped 2026-05-19 |
 | 3 | Migrate home/about/visit/donate/stories from content.ts to Firestore pages | Shipped 2026-05-21 |
 | 4 | Migrate structured collections (projects, news, events, milestones, board, partners) to Firestore + typed admin CRUD; swap dynamic nav resolver; delete content.ts | Shipped 2026-05-29 |
-| 5 | Photo upload UI in admin | Planned |
+| 5 | Photo upload UI in admin (`/admin/photos`: upload, edit, categorize) | Shipped 2026-06-17 |
 | 6 | Donation backend (Stripe) | Planned |
 | 7 | Event registration | Not started |
+
+---
+
+## Current Initiatives
+
+| Initiative | Scope | Status |
+|---|---|---|
+| Codebase Cleanup & Modularization | Dead-code removal, content-schema extraction, transport-agnostic read layer, security/DX fixes | In progress — content-schema extracted (MCA-25); transport-agnostic read layer landed (MCA-26), unblocking the content API (MCA-53) |
+| Test Coverage & QA | Vitest harness + coverage ratchet, lib backfill, E2E, security/load testing | In progress — harness and E2E scaffold shipped; lib backfill ongoing |
+| **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | Unblocked — foundation Workspace, billing, and nonprofit enrollment done (MCA-37). Project ids locked: `mcarthur-web-dev` / `mcarthur-web-uat` / `mcarthur-web-prod`. Next: provision the projects (MCA-38/39/40). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
+
+> **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Project ids, the storage bucket, and Firestore region are hardcoded in `apphosting.yaml`, `next.config.ts`, `.firebaserc`, and both workflows. Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
 
 ---
 
@@ -269,14 +319,16 @@ Items with lipsum are awaiting real historical content — the structure is in p
 
 **Firebase App Hosting deploys natively from GitHub** — no CI step triggers the rollout. Pushes to `master` are picked up by Firebase's GitHub connection automatically.
 
-GitHub Actions runs **only as a CI gate** (lint, type check, build).
+GitHub Actions runs **only as a CI gate** (lint, type check, test, build). Because `master` deploys to production, all work lands through PRs.
 
 ### Pipelines
 
 | Workflow | Trigger | Steps |
 |---|---|---|
-| `deploy.yml` | Push to `master` | Lint → TypeCheck → Build (verification only) |
-| `pr-checks.yml` | Pull request to `master` | Lint → TypeCheck → Build |
+| `deploy.yml` | Push to `master` | Lint → TypeCheck → Test → Build (verification only — despite the name, it does not deploy) |
+| `pr-checks.yml` | Pull request to `master` | Lint → TypeCheck → Test → Build |
+
+> E2E (`npm run test:e2e`) is **not yet wired into CI** — it runs locally against the emulator only.
 
 ### Firebase App Hosting Config (`apphosting.yaml`)
 
@@ -330,22 +382,61 @@ npm run dev
 
 > **Next.js 16:** Has breaking changes from prior versions. Read `node_modules/next/dist/docs/` before writing App Router code.
 
+> **Firebase CLI:** `firebase-tools` is a devDependency — run it as `npx firebase …` (no global install needed).
+
+> **Claude Code:** agent rules live in `AGENTS.md`; shared permissions and hooks in `.claude/settings.json` (personal approvals go in `.claude/settings.local.json`, gitignored); `/ship` runs the pre-PR gate. Background and follow-ups: Notion **Claude Code Setup**.
+
+---
+
+## Testing
+
+Tests ship in the **same PR** as the code they cover (see `AGENTS.md`). Co-locate `*.test.ts` (logic, Vitest `node`) and `*.test.tsx` (components, Vitest `jsdom`) next to the module under test.
+
+| Command | What it runs |
+|---|---|
+| `npm test` | Full Vitest suite (node + jsdom) |
+| `npm run test:coverage` | Vitest + coverage; enforces the gate in `vitest.config.ts` |
+| `npm run test:e2e` | Playwright against the Firebase Emulator Suite (seeds first) |
+| `npm run emulators` | Start auth/firestore/storage emulators standalone |
+
+- **Coverage gate** is a **ratchet floor** over `src/lib/**`, not a target. When a change raises real coverage, raise the floor just under the new actuals so it can't regress.
+- **Unit tests** run against in-memory Firestore / Admin SDK mocks in `src/test/` — no `.env.local` or network needed.
+- **E2E** runs against emulator project `demo-mcarthur` on ports 9099 (auth) / 8080 (firestore) / 9199 (storage). These ports are hardcoded in `firebase.json`, `playwright.config.ts`, and `src/lib/firebase.ts` — keep them in sync.
+- **Requires Java 21+** (`firebase-tools` dependency). Without it the emulators — and therefore `test:e2e` — will not start.
+
+### Emulator-only environment variables
+
+Never set these in a deployed environment; they would point the app at a non-existent local emulator, and `FIRESTORE_EMULATOR_HOST` additionally makes the Admin SDK skip credentials:
+- `NEXT_PUBLIC_FIREBASE_USE_EMULATOR` — `'true'` connects the client SDK to the emulator
+- `NEXT_PUBLIC_FIREBASE_EMULATOR_HOST` — defaults to `127.0.0.1`
+- `FIRESTORE_EMULATOR_HOST` / `FIREBASE_AUTH_EMULATOR_HOST` / `FIREBASE_STORAGE_EMULATOR_HOST`
+
 ---
 
 ## Important Files Reference
 
 | File | Purpose |
 |---|---|
-| [src/lib/cms/collectionStore.ts](src/lib/cms/collectionStore.ts) | Generic store factory for structured collections (projects, news, events, milestones, board, partners) |
-| [src/lib/firebase.ts](src/lib/firebase.ts) | Client-side Firebase init |
-| [src/lib/firebase-admin.ts](src/lib/firebase-admin.ts) | Server-side Admin SDK — needs `FIREBASE_SERVICE_ACCOUNT_JSON` |
+| [src/lib/content-schema/index.ts](src/lib/content-schema/index.ts) | **Content contract** — all schemas + types, no Firebase/Next/React |
+| [src/lib/content-schema/sections.ts](src/lib/content-schema/sections.ts) | Zod schemas for all page section types |
+| [src/lib/content-schema/doc.ts](src/lib/content-schema/doc.ts) | `StoredDoc` / `PublicDoc` / `Status` envelope types |
+| [src/lib/cms/collectionStore.ts](src/lib/cms/collectionStore.ts) | Generic store factory for structured collections (projects, news, events, milestones, board, partners) and pages |
+| [src/lib/cms/collectionReader.ts](src/lib/cms/collectionReader.ts) | Transport-agnostic content read layer — what the content API (MCA-53) will reuse |
+| [src/lib/firebase.ts](src/lib/firebase.ts) | Client-side Firebase init (+ opt-in emulator wiring) |
+| [src/lib/firebase-admin.ts](src/lib/firebase-admin.ts) | Server-side Admin SDK — needs `FIREBASE_SERVICE_ACCOUNT_JSON` (except emulator mode) |
 | [src/lib/cms/navigation.ts](src/lib/cms/navigation.ts) | Nav CRUD + hardcoded defaults |
 | [src/lib/cms/pages.ts](src/lib/cms/pages.ts) | CMS page CRUD |
-| [src/lib/cms/sections.ts](src/lib/cms/sections.ts) | Zod schemas for all section types |
 | [src/lib/auth/server.ts](src/lib/auth/server.ts) | Session verification for server components |
 | [src/lib/photos.ts](src/lib/photos.ts) | Firestore photo queries |
+| [src/test/](src/test/) | Vitest harness — in-memory Firestore + `firebase-admin` mock |
+| [e2e/](e2e/) | Playwright specs (emulator-backed) |
+| [firestore.indexes.json](firestore.indexes.json) | Composite index declarations — deploy to every environment |
 | [src/app/globals.css](src/app/globals.css) | Entire design system |
 | [src/app/admin/layout.tsx](src/app/admin/layout.tsx) | Admin auth guard |
 | [src/context/TweaksContext.tsx](src/context/TweaksContext.tsx) | Temporary design-switching state (to be removed) |
 | [apphosting.yaml](apphosting.yaml) | Firebase App Hosting runtime config |
-| [.github/workflows/deploy.yml](.github/workflows/deploy.yml) | CI gate (lint/type/build only — no deploy step) |
+| [vitest.config.ts](vitest.config.ts) | Test projects + coverage ratchet gate |
+| [.claude/settings.json](.claude/settings.json) | Claude Code shared permissions (allow/ask/deny) + eslint PostToolUse hook |
+| [.claude/skills/ship/SKILL.md](.claude/skills/ship/SKILL.md) | `/ship` — pre-PR gate: CI checks, coverage ratchet, doc sync, PR |
+| [.githooks/pre-commit](.githooks/pre-commit) | Bumps ONBOARDING "Last Updated" when this file is committed (needs `core.hooksPath`) |
+| [.github/workflows/deploy.yml](.github/workflows/deploy.yml) | CI gate (lint/type/test/build only — no deploy step) |

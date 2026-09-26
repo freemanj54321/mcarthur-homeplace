@@ -1,9 +1,17 @@
 #!/bin/sh
-# Updates the "Last Updated" date in ONBOARDING.md on every commit.
-TODAY=$(date +"%Y-%m-%d")
+# Bumps the "Last Updated" date in ONBOARDING.md when that file is part of the
+# commit, so the date means "content last edited", not "last commit anywhere".
 FILE="ONBOARDING.md"
 
-if [ -f "$FILE" ]; then
-  sed -i "s/^> Last Updated: .*/> Last Updated: $TODAY/" "$FILE"
-  git add "$FILE"
+git diff --cached --name-only | grep -qx "$FILE" || exit 0
+
+# Partially staged: re-adding the file would sweep unstaged edits into this
+# commit. Skip the bump rather than commit something the author didn't stage.
+if ! git diff --quiet -- "$FILE"; then
+  echo "pre-commit: $FILE has unstaged changes; skipping Last Updated bump." >&2
+  exit 0
 fi
+
+TODAY=$(date +"%Y-%m-%d")
+sed -i "s/^> Last Updated: .*/> Last Updated: $TODAY/" "$FILE"
+git add "$FILE"
