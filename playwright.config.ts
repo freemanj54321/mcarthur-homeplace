@@ -63,6 +63,8 @@ const webServerEnv: Record<string, string> = {
   FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
   FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
   FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
+  // MCA-71: E2E exercises the dev/uat surface, where the donation flow is on.
+  NEXT_PUBLIC_DONATIONS_ENABLED: 'true',
 }
 
 export default defineConfig({

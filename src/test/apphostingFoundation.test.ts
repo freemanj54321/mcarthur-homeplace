@@ -8,7 +8,8 @@ import { readApphostingFile, readEnv } from './apphostingEnv'
 // injection and run keyless. A Firebase value would override the injected
 // config, and a secret would fail the build (none exist in those projects; keys
 // are blocked by org policy, MCA-67). The three files must also stay in step,
-// so what passes in dev is what runs in uat and prod.
+// so what passes in dev is what runs in uat and prod. The one sanctioned
+// difference is the donations feature flag (MCA-71): on in dev/uat, off in prod.
 
 const ENVS = ['dev', 'uat', 'prod'] as const
 
@@ -55,11 +56,33 @@ describe.each(ENVS)('apphosting.%s.yaml', (env) => {
   })
 })
 
+// Variables allowed to differ between the three files, with each env's value.
+const PER_ENV: Record<string, Record<(typeof ENVS)[number], string>> = {
+  NEXT_PUBLIC_DONATIONS_ENABLED: { dev: 'true', uat: 'true', prod: 'false' },
+}
+
 describe('foundation env files stay in step', () => {
-  it('dev, uat, and prod declare identical env entries', () => {
-    const [dev, ...others] = ENVS.map((env) => readEnv(`apphosting.${env}.yaml`))
+  it('dev, uat, and prod declare identical env entries apart from per-env flags', () => {
+    const shared = (env: string) => readEnv(`apphosting.${env}.yaml`).filter((e) => !(e.variable in PER_ENV))
+    const [dev, ...others] = ENVS.map(shared)
     for (const entries of others) {
       expect(entries).toEqual(dev)
     }
+  })
+
+  it.each(ENVS)('%s sets each per-env flag to its expected value, at build and runtime', (env) => {
+    const byName = new Map(readEnv(`apphosting.${env}.yaml`).map((e) => [e.variable, e]))
+    for (const [variable, values] of Object.entries(PER_ENV)) {
+      expect(byName.get(variable), `${env}: ${variable}`).toEqual({
+        variable,
+        value: values[env],
+        availability: '[BUILD, RUNTIME]',
+      })
+    }
+  })
+
+  it('keeps donations off in prod (MCA-71: prototype, no payment backend)', () => {
+    const prod = readEnv('apphosting.prod.yaml').find((e) => e.variable === 'NEXT_PUBLIC_DONATIONS_ENABLED')
+    expect(prod?.value).toBe('false')
   })
 })
