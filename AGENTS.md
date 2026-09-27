@@ -19,7 +19,7 @@ If `node_modules/` is missing, run `npm install` first. The docs mirror nextjs.o
 
 # Definition of done
 
-Before saying a change is complete, run `npm run lint`, `npx tsc --noEmit`, and `npm run test:coverage`: the same gate CI runs in `.github/workflows/pr-checks.yml`. Report failures verbatim; don't summarize a red run as green.
+Before saying a change is complete, run `npm run lint`, `npx tsc --noEmit`, and `npm run test:coverage`: the same gate CI runs in `.github/workflows/ci.yml` (which also builds and runs E2E). Report failures verbatim; don't summarize a red run as green.
 
 # Git and deploy
 
