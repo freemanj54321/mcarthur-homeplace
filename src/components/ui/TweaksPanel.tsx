@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, ReactNode } from 'react'
 import { useTweaks, HeroVariant, ColorMode, CardLayout, TypePair, TartanLevel, DonateStyle } from '@/context/TweaksContext'
+import { donationsEnabled } from '@/lib/features'
 
 const STYLE = `
 .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
@@ -169,16 +170,19 @@ export function TweaksPanel() {
                 ]} />
             </Row>
           </Section>
-          <Section label="Donate CTA">
-            <Row label="Style">
-              <Sel value={tweaks.donateStyle} onChange={(v) => setTweak('donateStyle', v as DonateStyle)}
-                options={[
-                  { value: 'quiet', label: 'Quiet — inline divider' },
-                  { value: 'banner', label: 'Banner — navy strip' },
-                  { value: 'sticker', label: 'Sticker — gold seal' },
-                ]} />
-            </Row>
-          </Section>
+          {/* MCA-71: nothing to style where donations are off (prod). */}
+          {donationsEnabled() && (
+            <Section label="Donate CTA">
+              <Row label="Style">
+                <Sel value={tweaks.donateStyle} onChange={(v) => setTweak('donateStyle', v as DonateStyle)}
+                  options={[
+                    { value: 'quiet', label: 'Quiet — inline divider' },
+                    { value: 'banner', label: 'Banner — navy strip' },
+                    { value: 'sticker', label: 'Sticker — gold seal' },
+                  ]} />
+              </Row>
+            </Section>
+          )}
         </div>
       </div>
     </>

@@ -3,6 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { z } from 'zod'
 import { adminDb } from '@/lib/firebase-admin'
 import { projectsStore } from '@/lib/cms/projects'
+import { donationsEnabled, isDonateHref } from '@/lib/features'
 
 const COL = 'navigation'
 
@@ -116,6 +117,19 @@ function resolveDynamicChildren(item: NavItem, projectLinks: NavLink[]): Resolve
   return item
 }
 
+// MCA-71: with donations off (prod), drop every link into the donation flow,
+// from the defaults and from editor-saved nav alike. Filtering here rather than
+// in Firestore keeps each environment's nav data identical for content copies.
+// The admin editor (getPrimaryNavRaw / getFooterNavRaw) still sees the saved
+// links unfiltered, so a save on prod never erases them.
+function keepLink(link: NavLink): boolean {
+  return donationsEnabled() || !isDonateHref(link.href)
+}
+
+function filterItem(item: ResolvedNavItem): ResolvedNavItem {
+  return item.children ? { ...item, children: item.children.filter(keepLink) } : item
+}
+
 async function getProjectNavLinks(): Promise<NavLink[]> {
   try {
     const published = await projectsStore.listPublished()
@@ -143,10 +157,12 @@ export async function getPrimaryNav(): Promise<ResolvedPrimaryNav> {
     // Service account unavailable (e.g. local dev without env). Use defaults.
   }
   const projectLinks = await getProjectNavLinks()
+  const resolve = (items: NavItem[]) =>
+    items.filter(keepLink).map((item) => filterItem(resolveDynamicChildren(item, projectLinks)))
   return {
-    utility: raw.utility,
-    left: raw.left.map((item) => resolveDynamicChildren(item, projectLinks)),
-    right: raw.right.map((item) => resolveDynamicChildren(item, projectLinks)),
+    utility: raw.utility.filter(keepLink),
+    left: resolve(raw.left),
+    right: resolve(raw.right),
   }
 }
 
@@ -163,7 +179,8 @@ export async function getPrimaryNavRaw(): Promise<PrimaryNavInput> {
   return DEFAULT_PRIMARY
 }
 
-export async function getFooterNav(): Promise<ResolvedFooterNav> {
+/** Saved footer as editors see it: unfiltered, so saving never drops links (MCA-71). */
+export async function getFooterNavRaw(): Promise<FooterNavInput> {
   try {
     const snap = await adminDb().collection(COL).doc('footer').get()
     if (snap.exists) {
@@ -174,6 +191,15 @@ export async function getFooterNav(): Promise<ResolvedFooterNav> {
     // fall through
   }
   return DEFAULT_FOOTER
+}
+
+export async function getFooterNav(): Promise<ResolvedFooterNav> {
+  const raw = await getFooterNavRaw()
+  return {
+    ...raw,
+    columns: raw.columns.map((col) => ({ ...col, links: col.links.filter(keepLink) })),
+    bottomLinks: raw.bottomLinks.filter(keepLink),
+  }
 }
 
 export async function savePrimaryNav(input: PrimaryNavInput, editorUid: string): Promise<void> {
