@@ -40,7 +40,7 @@ All site content is now Firestore-backed and editable from `/admin` — admin-cr
 | Admin SDK | firebase-admin | Server-only; credentials from `FIREBASE_SERVICE_ACCOUNT_JSON`, App Hosting's injected config (keyless), or local ADC (see decision 4) |
 | Hosting | Firebase App Hosting (Cloud Run) | One backend per env (dev/uat/prod), `us-central1`, Node 24; 0–2 instances, 512 MB, 80 concurrent connections |
 | Testing | Vitest (node + jsdom) · Playwright + Firebase Emulator Suite | Unit/component under `src/**`, E2E under `e2e/`; coverage ratchet gate |
-| CI/CD | GitHub Actions | Lint → type check → test → build (Firebase deploys natively) |
+| CI/CD | GitHub Actions | Lint → type check → test → build, plus emulator E2E, on `develop`/`uat`/`master` (Firebase deploys natively) |
 
 ---
 
@@ -325,9 +325,9 @@ Items with lipsum are awaiting real historical content — the structure is in p
 |---|---|---|
 | Codebase Cleanup & Modularization | Dead-code removal, content-schema extraction, transport-agnostic read layer, security/DX fixes | In progress — content-schema extracted (MCA-25); transport-agnostic read layer landed (MCA-26), unblocking the content API (MCA-53) |
 | Test Coverage & QA | Vitest harness + coverage ratchet, lib backfill, E2E, security/load testing | In progress — harness and E2E scaffold shipped; lib backfill ongoing |
-| **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | In progress — foundation Workspace, billing, nonprofit enrollment done (MCA-37). Projects `mcarthur-web-{dev,uat,prod}` (MCA-38), Firestore `nam5` + Storage `us-east1` (MCA-40), web apps (MCA-39). Deployed envs use injected config and a keyless Admin SDK, since org policy blocks keys (MCA-67, MCA-44). **All three App Hosting backends are live** (MCA-46): dev and uat on https at `dev.`/`uat.wtmcarthurhomeplace.org`; prod on the apex + `www`, domain verifying (MCA-52). Next: CI on `develop`/`uat` (MCA-45), sign-in + editors (MCA-51), content migration (MCA-47–49), legacy decommission (MCA-59). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
+| **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | In progress — foundation Workspace, billing, nonprofit enrollment done (MCA-37). Projects `mcarthur-web-{dev,uat,prod}` (MCA-38), Firestore `nam5` + Storage `us-east1` (MCA-40), web apps (MCA-39). Deployed envs use injected config and a keyless Admin SDK, since org policy blocks keys (MCA-67, MCA-44). **All three App Hosting backends are live** (MCA-46): dev and uat on https at `dev.`/`uat.wtmcarthurhomeplace.org`; prod on the apex + `www`, domain verifying (MCA-52). CI gates all three branches (MCA-45). Next: branch protection (MCA-68), sign-in + editors (MCA-51), content migration (MCA-47–49), legacy decommission (MCA-59). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
 
-> **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Its project id and bucket now live only in `apphosting.legacy.yaml` (plus the CI workflows until MCA-45); `next.config.ts` and the SDK init resolve per environment (MCA-44). Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
+> **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Its project id and bucket now live only in `apphosting.legacy.yaml`; `next.config.ts` and the SDK init resolve per environment (MCA-44). Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
 
 ---
 
@@ -346,16 +346,17 @@ Items with lipsum are awaiting real historical content — the structure is in p
 
 Code promotes **up** by PR: feature → `develop` → `uat` → `master`. Until MCA-59, a merge to `master` deploys to both prod and legacy.
 
-GitHub Actions runs **only as a CI gate** (lint, type check, test, build). It currently gates PRs into `master` only; adding `develop` and `uat` is MCA-45. All work lands through PRs.
+GitHub Actions runs **only as a CI gate**, on PRs into and pushes to `develop`, `uat`, and `master` (MCA-45). All work lands through PRs.
 
 ### Pipelines
 
 | Workflow | Trigger | Steps |
 |---|---|---|
-| `deploy.yml` | Push to `master` | Lint → TypeCheck → Test → Build (verification only — despite the name, it does not deploy) |
-| `pr-checks.yml` | Pull request to `master` | Lint → TypeCheck → Test → Build |
+| `ci.yml` | PR into or push to `develop` / `uat` / `master` | **Lint, type check, test, build:** lint → `tsc` → `test:coverage` → build. **E2E (emulator):** Java 21 + Chromium → `test:e2e` |
 
-> E2E (`npm run test:e2e`) is **not yet wired into CI** — it runs locally against the emulator only.
+- The **build** uses the **dev** project's public web config from GitHub **repository variables** (`NEXT_PUBLIC_FIREBASE_*`, Settings → Secrets and variables → Actions → Variables). It's public by design, so not a secret, and CI has no service-account key. The donations flag follows the target branch: `"false"` for `master`, `"true"` otherwise.
+- **E2E** is hermetic: pinned to the emulator project `demo-mcarthur`, never a real environment. It can't catch production-only issues such as the `downloadUrl` rewrite; that's a real-environment check (MCA-58).
+- The two job names are the required checks for branch protection (MCA-68); keep them stable. Guard test: `src/test/ciWorkflow.test.ts`.
 
 ### Firebase App Hosting Config (`apphosting*.yaml`)
 
@@ -365,16 +366,13 @@ GitHub Actions runs **only as a CI gate** (lint, type check, test, build). It cu
   - `dev` / `uat` / `prod` → `apphosting.{dev,uat,prod}.yaml`: the `mcarthur-web-*` foundation backends. The emulator-safety flag, plus the donations feature flag (decision 8); Firebase config is injected by App Hosting and the Admin SDK is keyless (decision 4). The three files must stay identical apart from comments and `NEXT_PUBLIC_DONATIONS_ENABLED`, which must be `"false"` on prod.
 - App Hosting rules learned the hard way (MCA-44): a secret referenced in the base file fails the build in any project without it, and an override **can't blank** a variable (`value: ""` is rejected). Guard tests: `src/test/apphostingLegacy.test.ts`, `src/test/apphostingFoundation.test.ts`.
 
-### Secrets Required
+### Config and Secrets
 
-**GitHub Actions (Settings → Secrets):**
-- `NEXT_PUBLIC_FIREBASE_API_KEY`
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
-- `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`
+**GitHub Actions (repository variables, not secrets):** the seven `NEXT_PUBLIC_FIREBASE_*` values for the **dev** project (listed in MCA-39). CI uses no secrets.
 
-**Runtime (Google Secret Manager / `.env.local`):**
+**Foundation backends (dev/uat/prod):** none. App Hosting injects the config, and the Admin SDK is keyless (decision 4).
+
+**Legacy backend (`mcarthur-tour`, Secret Manager) / key-based `.env.local`:**
 - All `NEXT_PUBLIC_FIREBASE_*` vars above
 - `FIREBASE_SERVICE_ACCOUNT_JSON` — full service account JSON, **required for the admin CMS and navigation to work**
 
@@ -474,4 +472,4 @@ Never set these in a deployed environment; they would point the app at a non-exi
 | [.claude/settings.json](.claude/settings.json) | Claude Code shared permissions (allow/ask/deny) + eslint PostToolUse hook |
 | [.claude/skills/ship/SKILL.md](.claude/skills/ship/SKILL.md) | `/ship` — pre-PR gate: CI checks, coverage ratchet, doc sync, PR |
 | [.githooks/pre-commit](.githooks/pre-commit) | Bumps ONBOARDING "Last Updated" when this file is committed (needs `core.hooksPath`) |
-| [.github/workflows/deploy.yml](.github/workflows/deploy.yml) | CI gate (lint/type/test/build only — no deploy step) |
+| [.github/workflows/ci.yml](.github/workflows/ci.yml) | CI gate for `develop`/`uat`/`master`: lint/type/test/build + emulator E2E (no deploy step) |
