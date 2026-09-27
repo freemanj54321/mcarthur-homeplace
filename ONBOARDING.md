@@ -2,7 +2,7 @@
 
 > **Canonical copy lives in Notion** ([Project Overview](https://www.notion.so/37066661a975815e994acfb3e3d2d276), under Documentation). This file is a synced local mirror, imported into agent context via `@ONBOARDING.md` in `CLAUDE.md`. When the overview changes, update **both** this file and the Notion page.
 
-> Last Updated: 2026-09-26
+> Last Updated: 2026-09-27
 
 ---
 
@@ -178,7 +178,7 @@ The design system lives entirely in [src/app/globals.css](src/app/globals.css). 
 ### Header Layout
 
 Two-row layout:
-- **Utility row** — slim band with "Plan a Visit" and gold Donate CTA
+- **Utility row** — slim band with "Plan a Visit" and gold Donate CTA. The last utility link gets the gold CTA styling, so on prod (donations off, decision 8) "Plan a Visit" takes it.
 - **Main row** — left nav · centered logo (104px desktop) · right nav
 - **What to See** has a hover/focus dropdown listing all 8 property pages
 - Mobile: centered logo, hamburger on the right, inline submenu under What to See
@@ -227,6 +227,14 @@ This split is deliberate: it is the single source of truth for content shape, so
 ### 7. Composite indexes are declared in the repo
 
 `firestore.indexes.json` declares the composite indexes the photo queries require (`project + order`, `featured + order`). They must be deployed to every environment. **A missing index fails silently** — the photo queries catch errors and return `[]`, so galleries render blank while the page still loads fine. `src/test/firestoreIndexes.test.ts` guards against accidental removal.
+
+### 8. Donations are feature-flagged per environment (MCA-71)
+
+The donation flow (`/donate`, `DonateForm`) is a **prototype** with no payment backend (Stripe is CMS Phase 6). It stays on dev and uat and is **hidden on prod** by `NEXT_PUBLIC_DONATIONS_ENABLED`: `"true"` in `apphosting.dev.yaml` and `apphosting.uat.yaml`, `"false"` in `apphosting.prod.yaml`. `donationsEnabled()` in `src/lib/features.ts` treats anything other than `"true"` as off, so the legacy backend and local builds without the value hide donations too (set it in `.env.local` to work on the form).
+
+When off: `/donate` returns 404, the nav lookup drops every `/donate` link (the defaults and any editors add), `DonateStrip` renders nothing, and the hero and `/visit` donate buttons and the TweaksPanel "Donate CTA" control are hidden. The `donate` callout tone stays in the schema. **The flag can't catch `/donate` links typed into CMS rich text**, so the prod content migration (MCA-47 through MCA-49) must remove them.
+
+It's a `NEXT_PUBLIC_` variable because client components read it, and App Hosting builds each backend separately (`BUILD` + `RUNTIME` availability), so each environment gets its own value baked in.
 
 ---
 
@@ -306,7 +314,7 @@ Items with lipsum are awaiting real historical content — the structure is in p
 | 3 | Migrate home/about/visit/donate/stories from content.ts to Firestore pages | Shipped 2026-05-21 |
 | 4 | Migrate structured collections (projects, news, events, milestones, board, partners) to Firestore + typed admin CRUD; swap dynamic nav resolver; delete content.ts | Shipped 2026-05-29 |
 | 5 | Photo upload UI in admin (`/admin/photos`: upload, edit, categorize) | Shipped 2026-06-17 |
-| 6 | Donation backend (Stripe) | Planned |
+| 6 | Donation backend (Stripe) | Planned. Prototype form (no payments) is live on dev and uat only; hidden on prod by feature flag (MCA-71, decision 8) |
 | 7 | Event registration | Not started |
 
 ---
@@ -354,7 +362,7 @@ GitHub Actions runs **only as a CI gate** (lint, type check, test, build). It cu
 - `apphosting.yaml` is shared by every backend: 1 CPU, 512 MB memory, 0–2 instances, 80 concurrent connections. **No env vars.** Keep it environment-neutral.
 - Each backend's **Environment** setting (backend → Settings → Environment) selects an override file, merged over the base by variable name:
   - `legacy` → `apphosting.legacy.yaml`: the live `mcarthur-tour` backend's project id, bucket, and Secret Manager references (deleted at decommission, MCA-59).
-  - `dev` / `uat` / `prod` → `apphosting.{dev,uat,prod}.yaml`: the `mcarthur-web-*` foundation backends. Only the emulator-safety flag; Firebase config is injected by App Hosting and the Admin SDK is keyless (decision 4). The three files must stay identical apart from comments.
+  - `dev` / `uat` / `prod` → `apphosting.{dev,uat,prod}.yaml`: the `mcarthur-web-*` foundation backends. The emulator-safety flag, plus the donations feature flag (decision 8); Firebase config is injected by App Hosting and the Admin SDK is keyless (decision 4). The three files must stay identical apart from comments and `NEXT_PUBLIC_DONATIONS_ENABLED`, which must be `"false"` on prod.
 - App Hosting rules learned the hard way (MCA-44): a secret referenced in the base file fails the build in any project without it, and an override **can't blank** a variable (`value: ""` is rejected). Guard tests: `src/test/apphostingLegacy.test.ts`, `src/test/apphostingFoundation.test.ts`.
 
 ### Secrets Required
@@ -390,6 +398,9 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=mcarthur-tour.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=...
+
+# Optional: show the prototype donation flow (off unless "true"; decision 8):
+NEXT_PUBLIC_DONATIONS_ENABLED=true
 
 # Required for admin CMS (navigation, pages, auth verification):
 FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"mcarthur-tour",...}
@@ -448,6 +459,7 @@ Never set these in a deployed environment; they would point the app at a non-exi
 | [src/lib/firebase-admin.ts](src/lib/firebase-admin.ts) | Server-side Admin SDK — key, App Hosting keyless, emulator, or ADC (see decision 4) |
 | [src/lib/firebaseConfig.ts](src/lib/firebaseConfig.ts) | Config-source decisions for both SDKs and `next.config.ts` (MCA-44) |
 | [src/lib/cms/navigation.ts](src/lib/cms/navigation.ts) | Nav CRUD + hardcoded defaults |
+| [src/lib/features.ts](src/lib/features.ts) | Per-environment feature flags — `donationsEnabled()` (decision 8, MCA-71) |
 | [src/lib/cms/pages.ts](src/lib/cms/pages.ts) | CMS page CRUD |
 | [src/lib/auth/server.ts](src/lib/auth/server.ts) | Session verification for server components |
 | [src/lib/photos.ts](src/lib/photos.ts) | Firestore photo queries |
