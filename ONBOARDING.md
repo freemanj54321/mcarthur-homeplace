@@ -90,6 +90,9 @@ src/
 │   ├── firebase.ts                # Client-side Firebase init (+ opt-in emulator wiring)
 │   ├── firebase-admin.ts          # Server-side Admin SDK (Auth, Firestore, Storage)
 │   ├── firebaseConfig.ts          # Where each SDK gets its config (explicit vs App Hosting-injected); SDK-free
+│   ├── features.ts                # Per-environment feature flags (donations, decision 8)
+│   ├── migration/
+│   │   └── contentMigration.ts    # Pure content-copy logic (collect → copy images → rewrite URLs → reconcile), MCA-47
 │   ├── photos.ts                  # Firestore photo queries (client SDK)
 │   ├── auth/
 │   │   ├── server.ts              # Session verification (server components / actions)
@@ -116,7 +119,7 @@ src/
 └── test/                          # Vitest harness: in-memory Firestore + firebase-admin mock
 
 e2e/                               # Playwright specs (run against the Firebase Emulator Suite)
-scripts/                           # seed-editor / seed-pages / seed-structured / seed-emulator
+scripts/                           # seed-editor / seed-pages / seed-structured / seed-emulator; migrate-content (MCA-47)
 middleware.ts                      # /admin session redirect — Next 16 deprecates `middleware` in favor of `proxy`
 firestore.indexes.json             # Composite index declarations (deployed per environment)
 playwright.config.ts               # E2E config — emulator-backed, project `demo-mcarthur`
@@ -328,6 +331,8 @@ Items with lipsum are awaiting real historical content — the structure is in p
 | **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | In progress — foundation Workspace, billing, nonprofit enrollment done (MCA-37). Projects `mcarthur-web-{dev,uat,prod}` (MCA-38), Firestore `nam5` + Storage `us-east1` (MCA-40), web apps (MCA-39). Deployed envs use injected config and a keyless Admin SDK, since org policy blocks keys (MCA-67, MCA-44). **All three App Hosting backends are live** (MCA-46): dev and uat on https at `dev.`/`uat.wtmcarthurhomeplace.org`; prod on the apex + `www`, domain verifying (MCA-52). CI gates all three branches (MCA-45). Next: branch protection (MCA-68), sign-in + editors (MCA-51), content migration (MCA-47–49), legacy decommission (MCA-59). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
 
 > **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Its project id and bucket now live only in `apphosting.legacy.yaml`; `next.config.ts` and the SDK init resolve per environment (MCA-44). Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
+>
+> **Content copy (MCA-47):** `npm run migrate:content -- --from legacy --to dev` copies the nine content collections (not `editors`), copies each referenced image into the destination bucket with a fresh download token, and rewrites every `downloadUrl` and embedded rich-text URL. It is a **dry run unless `--apply`**, `--prune` removes destination docs not in the source, and prod also needs `--confirm-prod`. After an applied run it checks that doc counts match and every image resolved. The destination uses ADC (foundation login; keys are blocked). The legacy source needs its service-account key via `SOURCE_SA_PATH`, **so keep that key until the final prod copy (MCA-49)**.
 
 ---
 
@@ -464,6 +469,7 @@ Never set these in a deployed environment; they would point the app at a non-exi
 | [src/lib/firebaseConfig.ts](src/lib/firebaseConfig.ts) | Config-source decisions for both SDKs and `next.config.ts` (MCA-44) |
 | [src/lib/cms/navigation.ts](src/lib/cms/navigation.ts) | Nav CRUD + hardcoded defaults |
 | [src/lib/features.ts](src/lib/features.ts) | Per-environment feature flags — `donationsEnabled()` (decision 8, MCA-71) |
+| [scripts/migrate-content.mjs](scripts/migrate-content.mjs) | Content copy between projects (`npm run migrate:content`); logic in `src/lib/migration/contentMigration.ts` (MCA-47) |
 | [src/lib/cms/pages.ts](src/lib/cms/pages.ts) | CMS page CRUD |
 | [src/lib/auth/server.ts](src/lib/auth/server.ts) | Session verification for server components |
 | [src/lib/photos.ts](src/lib/photos.ts) | Firestore photo queries |

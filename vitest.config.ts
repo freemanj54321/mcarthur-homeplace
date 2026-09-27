@@ -41,11 +41,14 @@ export default defineConfig({
       // Raised 2026-09-27 by MCA-71 (features.ts + first navigation.ts tests).
       // Actuals then: 67.49 lines / 69.9 functions / 66.66 statements /
       // 59.51 branches.
+      // Raised 2026-09-27 by MCA-47 (content migration module + tests).
+      // Actuals then: 76.4 lines / 75.78 functions / 75.9 statements /
+      // 70.52 branches.
       thresholds: {
-        lines: 67,
-        functions: 69,
-        statements: 66,
-        branches: 59,
+        lines: 75,
+        functions: 74,
+        statements: 74,
+        branches: 69,
       },
     },
     projects: [
