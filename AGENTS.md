@@ -23,12 +23,14 @@ Before saying a change is complete, run `npm run lint`, `npx tsc --noEmit`, and 
 
 # Git and deploy
 
-**Pushing to `master` deploys to production** (Firebase App Hosting builds from `master` automatically). Never push to `master` directly:
+**Each environment branch deploys automatically:** `develop` → dev, `uat` → uat, `master` → **production** (plus the legacy backend until MCA-59). Never push to any of them directly. Every change goes **feature → `develop` → `uat` → `master`**, by PR:
 
-* Branch per issue: `mca-<n>-<short-slug>` (e.g. `mca-41-firestore-indexes`); use `chore/<slug>` for work with no issue.
+* Branch per issue **from `develop`**: `mca-<n>-<short-slug>` (e.g. `mca-41-firestore-indexes`); use `chore/<slug>` for work with no issue.
 * Commits: `type(scope): summary (MCA-XX)`, e.g. `feat(firestore): declare required composite indexes (MCA-41)`.
-* Open a PR to `master`; CI must pass before merge.
-* The `/ship` skill runs this whole flow (checks → branch → commit → PR). Prefer it to doing the steps by hand.
+* Open the feature PR **into `develop`**. CI (`.github/workflows/ci.yml`) must pass before merge.
+* Promote with separate PRs: `develop` → `uat`, then `uat` → `master`. Each is gated by CI. Merging to `master` ships to production, so confirm with the user before merging that promotion.
+* Never open a feature PR into `uat` or `master`, and never back-merge `master` into `develop`. `master` must never get ahead of `develop`.
+* The `/ship` skill runs this whole flow up to the feature PR (checks → branch → commit → PR into `develop`). Prefer it to doing the steps by hand.
 
 # Claude Code configuration
 
