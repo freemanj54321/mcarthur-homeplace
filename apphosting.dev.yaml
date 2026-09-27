@@ -3,7 +3,7 @@
 # App Hosting merges this file over apphosting.yaml for any backend whose
 # Environment (backend → Settings → Environment) is `dev`.
 #
-# DONE: intentionally almost empty. Dev takes its Firebase config from App
+# DONE: intentionally almost empty (emulator safety + feature flags). Dev takes its Firebase config from App
 # Hosting's injected FIREBASE_WEBAPP_CONFIG / FIREBASE_CONFIG and runs the Admin
 # SDK keyless (src/lib/firebaseConfig.ts, MCA-44, MCA-67). Don't add Firebase
 # values or secrets here; explicit values would override the injected config.
@@ -13,4 +13,12 @@ env:
   # client SDK to a local emulator.
   - variable: NEXT_PUBLIC_FIREBASE_USE_EMULATOR
     value: "false"
+    availability: [BUILD, RUNTIME]
+
+  # Donations feature flag (MCA-71): the /donate flow is a prototype with no
+  # payment backend, so it's on for dev and uat and off on prod. Read by
+  # src/lib/features.ts; anything but "true" is off. BUILD because Next.js
+  # inlines NEXT_PUBLIC_* into the client bundle at build time.
+  - variable: NEXT_PUBLIC_DONATIONS_ENABLED
+    value: "true"
     availability: [BUILD, RUNTIME]

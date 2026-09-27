@@ -1,6 +1,9 @@
 import Link from 'next/link'
+import { donationsEnabled } from '@/lib/features'
 
 export function HeroTypographic() {
+  // MCA-71: the match copy and donate button only show where donations are on.
+  const donations = donationsEnabled()
   return (
     <section style={{ position: 'relative', overflow: 'hidden' }}>
       <div className="container-wide" style={{ paddingTop: 80, paddingBottom: 80 }}>
@@ -17,8 +20,8 @@ export function HeroTypographic() {
           <p className="lead dropcap" style={{ fontSize: 22 }}>
             We are descendants and neighbors of the W.T. McArthur farm — patented in 1893,
             built up across three generations, and quiet for the last thirty-five years.
-            We are bringing it back, plank by plank, name by name. Every dollar through December
-            is matched by the State Historical Commission.
+            We are bringing it back, plank by plank, name by name.
+            {donations && ' Every dollar through December is matched by the State Historical Commission.'}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <Link href="/what-to-see" className="btn btn-primary btn-lg" style={{ justifyContent: 'space-between' }}>
@@ -27,9 +30,11 @@ export function HeroTypographic() {
             <Link href="/about" className="btn btn-outline btn-lg" style={{ justifyContent: 'space-between' }}>
               <span>The full history</span> <span className="arrow">→</span>
             </Link>
-            <Link href="/donate" className="btn btn-ghost" style={{ justifyContent: 'space-between' }}>
-              <span>Donate to the match</span> <span className="arrow">→</span>
-            </Link>
+            {donations && (
+              <Link href="/donate" className="btn btn-ghost" style={{ justifyContent: 'space-between' }}>
+                <span>Donate to the match</span> <span className="arrow">→</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
