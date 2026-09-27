@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { eventsStore } from '@/lib/cms/events'
+import { donationsEnabled } from '@/lib/features'
 
 export const metadata = { title: 'Plan a Visit — W.T. McArthur Historic Homeplace Foundation' }
 export const revalidate = 60
@@ -33,8 +34,9 @@ export default async function VisitPage() {
           ))}
         </div>
         <div style={{ marginTop: 48, display: 'flex', justifyContent: 'center', gap: 12 }}>
-          <Link href="/donate" className="btn btn-primary">Support the work →</Link>
-          <Link href="/" className="btn btn-outline">Back to home</Link>
+          {/* MCA-71: donations are off on prod. */}
+          {donationsEnabled() && <Link href="/donate" className="btn btn-primary">Support the work →</Link>}
+          <Link href="/" className={donationsEnabled() ? 'btn btn-outline' : 'btn btn-primary'}>Back to home</Link>
         </div>
       </div>
     </main>

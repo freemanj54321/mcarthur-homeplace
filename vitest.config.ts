@@ -38,11 +38,14 @@ export default defineConfig({
       // Raised 2026-09-26 by MCA-62 after MCA-26 + MCA-44 (firebaseConfig.ts)
       // landed. Actuals then: 54.28 lines / 60.82 functions / 54.16 statements /
       // 51.75 branches.
+      // Raised 2026-09-27 by MCA-71 (features.ts + first navigation.ts tests).
+      // Actuals then: 67.49 lines / 69.9 functions / 66.66 statements /
+      // 59.51 branches.
       thresholds: {
-        lines: 53,
-        functions: 59,
-        statements: 53,
-        branches: 50,
+        lines: 67,
+        functions: 69,
+        statements: 66,
+        branches: 59,
       },
     },
     projects: [

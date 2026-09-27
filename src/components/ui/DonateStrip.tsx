@@ -2,8 +2,12 @@
 
 import Link from 'next/link'
 import { DonateStyle } from '@/context/TweaksContext'
+import { donationsEnabled } from '@/lib/features'
 
 export function DonateStrip({ style = 'quiet' }: { style?: DonateStyle }) {
+  // MCA-71: the one gate for every page that embeds the match strip (home,
+  // about, What to See list and detail). Off on prod.
+  if (!donationsEnabled()) return null
   if (style === 'quiet') {
     return (
       <section style={{ borderTop: '1px solid var(--c-line)', borderBottom: '1px solid var(--c-line)', padding: '36px 0' }}>
