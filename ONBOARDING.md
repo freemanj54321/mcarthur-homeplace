@@ -344,7 +344,13 @@ Items with lipsum are awaiting real historical content — the structure is in p
 | `master` | prod | `prod` (`mcarthur-web-prod`) | https://wtmcarthurhomeplace.org (+ `www`) |
 | `master` | legacy | legacy backend (`mcarthur-tour`) | no traffic; decommissioned in MCA-59 |
 
-Code promotes **up** by PR: feature → `develop` → `uat` → `master`. Until MCA-59, a merge to `master` deploys to both prod and legacy.
+Code promotes **up** by PR: feature → `develop` → `uat` → `master` (the rule since 2026-09-27; details in `AGENTS.md` → Git and deploy):
+
+- Feature branches are cut from `develop` and PR'd into `develop`.
+- Promotions are their own PRs: `develop` → `uat`, then `uat` → `master`, each gated by CI.
+- Never PR a feature straight into `uat` or `master`, and never back-merge `master` into `develop`.
+
+Until MCA-59, a merge to `master` deploys to both prod and legacy.
 
 GitHub Actions runs **only as a CI gate**, on PRs into and pushes to `develop`, `uat`, and `master` (MCA-45). All work lands through PRs.
 
