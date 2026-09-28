@@ -183,7 +183,7 @@ The design system lives entirely in [src/app/globals.css](src/app/globals.css). 
 Two-row layout:
 - **Utility row** — slim band with "Plan a Visit" and gold Donate CTA. The last utility link gets the gold CTA styling, so on prod (donations off, decision 8) "Plan a Visit" takes it.
 - **Main row** — left nav · centered logo (104px desktop) · right nav
-- **What to See** has a hover/focus dropdown listing all 8 property pages
+- **What to See** has a hover/focus dropdown listing the published property pages (only The Main House on prod today)
 - Mobile: centered logo, hamburger on the right, inline submenu under What to See
 
 ---
@@ -289,21 +289,21 @@ CMS-managed pages with draft/publish workflow.
 
 ## Current Content (as of last update)
 
-**What to See (8 items):**
-- The Main House (1893 core; expanded by 1900; Queen Anne, real historical content)
-- The Cooper Conner House (c. 1908, lipsum placeholder)
-- The Onion Barn (lipsum)
-- The Commissary (lipsum)
-- Tenant Housing (lipsum)
-- The School House (lipsum)
-- The Long-leaf Pines (lipsum)
-- Dead River Cemetery (lipsum)
+As of 2026-09-28, prod shows **only content that is ready for the public**. Placeholder records are unpublished (`draft`), not deleted, so editors can replace the text and republish (MCA-49, MCA-91).
 
-Items with lipsum are awaiting real historical content — the structure is in place.
+**What to See (8 projects, 1 published on prod):**
+- The Main House (1893 core; expanded by 1900; Queen Anne, real historical content): **published**
+- The Cooper Conner House, The Onion Barn, The Commissary, Tenant Housing, The School House, The Long-leaf Pines, Dead River Cemetery: lorem ipsum, **unpublished on prod** until real content is written
 
-**Board Members (6):** `boardMembers` Firestore collection (edit at `/admin/structured/boardMembers`)
+**News (3), Events (3), Board Members (6), Partners (5):** all invented sample data, **unpublished on prod**. Their sections on the home and About pages render nothing until real entries are published (edit at `/admin/structured/…`).
 
-**Timeline Milestones (7):** 1893 (property acquired) → 1900 (Main House complete) → … → 2026
+**Timeline Milestones (7):** real, published. 1893 (property acquired) → 1900 (Main House complete) → … → 2026
+
+**Pages:** `about` ("Our Story") and `stories` ("Stories & News", a short coming-soon note) are published. `/visit` asks visitors to check back for future dates while no events are published.
+
+**Photos:** 191 legacy photos (mostly Cooper Conner House and Big House) are in the photo library as **unassigned** `archival` photos, so they appear on no public page until an editor adds captions, alt text and a project in `/admin/photos`.
+
+**Dev and uat** still have the sample content published; only prod was cleaned.
 
 ---
 
@@ -328,7 +328,7 @@ Items with lipsum are awaiting real historical content — the structure is in p
 |---|---|---|
 | Codebase Cleanup & Modularization | Dead-code removal, content-schema extraction, transport-agnostic read layer, security/DX fixes | In progress — content-schema extracted (MCA-25); transport-agnostic read layer landed (MCA-26), unblocking the content API (MCA-53) |
 | Test Coverage & QA | Vitest harness + coverage ratchet, lib backfill, E2E, security/load testing | In progress — harness and E2E scaffold shipped; lib backfill ongoing |
-| **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | In progress — foundation Workspace, billing, nonprofit enrollment done (MCA-37). Projects `mcarthur-web-{dev,uat,prod}` (MCA-38), Firestore `nam5` + Storage `us-east1` (MCA-40), web apps (MCA-39). Deployed envs use injected config and a keyless Admin SDK, since org policy blocks keys (MCA-67, MCA-44). **All three App Hosting backends are live** (MCA-46): dev and uat on https at `dev.`/`uat.wtmcarthurhomeplace.org`; prod on the apex + `www`, domain verifying (MCA-52). CI gates all three branches (MCA-45). Next: branch protection (MCA-68), sign-in + editors (MCA-51), content migration (MCA-47–49), legacy decommission (MCA-59). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
+| **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | In progress — foundation Workspace, billing, nonprofit enrollment done (MCA-37). Projects `mcarthur-web-{dev,uat,prod}` (MCA-38), Firestore `nam5` + Storage `us-east1` (MCA-40), web apps (MCA-39). Deployed envs use injected config and a keyless Admin SDK, since org policy blocks keys (MCA-67, MCA-44). **All three App Hosting backends are live** (MCA-46): dev and uat on https at `dev.`/`uat.wtmcarthurhomeplace.org`; prod live on https at the apex + `www` (MCA-70). CI gates all three branches (MCA-45), with branch protection and the feature → `develop` → `uat` → `master` rule (MCA-68). Donations and the design switcher are hidden on prod (MCA-71, MCA-91). **Content copied from `mcarthur-tour` into dev, uat and prod on 2026-09-28** (MCA-48, MCA-49), including 191 legacy photos imported into the photo library as unassigned (MCA-90). On prod, placeholder content is unpublished and placeholder copy removed from the code (MCA-91). Next: sign-in + editors (MCA-51, in progress), keyless write path (MCA-88), MCA-49 sign-off, legacy decommission (MCA-59). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
 | **Website Analytics (GA4)** | Measure and report traffic with GA4: basic tracking on all envs (reported on prod only), no banner for US visitors, consent banner for EU/UK/CH only via a consent platform + Consent Mode v2, monthly board report | Planned (2026-09-27): Linear project with MCA-72 to MCA-87 (Phase 1 US basics, Phase 2 EU/UK consent, Phase 3 engagement). No environment collects data yet. Detail: see **Website Analytics — GA4 Plan** page in Notion (sibling of the Project Overview under Documentation) |
 
 > **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Its project id and bucket now live only in `apphosting.legacy.yaml`; `next.config.ts` and the SDK init resolve per environment (MCA-44). Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
