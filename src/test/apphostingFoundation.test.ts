@@ -59,6 +59,7 @@ describe.each(ENVS)('apphosting.%s.yaml', (env) => {
 // Variables allowed to differ between the three files, with each env's value.
 const PER_ENV: Record<string, Record<(typeof ENVS)[number], string>> = {
   NEXT_PUBLIC_DONATIONS_ENABLED: { dev: 'true', uat: 'true', prod: 'false' },
+  NEXT_PUBLIC_DESIGN_TOOLS_ENABLED: { dev: 'true', uat: 'true', prod: 'false' },
 }
 
 describe('foundation env files stay in step', () => {
@@ -83,6 +84,11 @@ describe('foundation env files stay in step', () => {
 
   it('keeps donations off in prod (MCA-71: prototype, no payment backend)', () => {
     const prod = readEnv('apphosting.prod.yaml').find((e) => e.variable === 'NEXT_PUBLIC_DONATIONS_ENABLED')
+    expect(prod?.value).toBe('false')
+  })
+
+  it('keeps the design tools off in prod (MCA-91: dev/uat review only)', () => {
+    const prod = readEnv('apphosting.prod.yaml').find((e) => e.variable === 'NEXT_PUBLIC_DESIGN_TOOLS_ENABLED')
     expect(prod?.value).toBe('false')
   })
 })

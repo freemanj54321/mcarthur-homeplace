@@ -15,11 +15,9 @@ export function HeroPhoto() {
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(20,17,13,0.55) 0%, rgba(20,17,13,0.40) 45%, rgba(20,17,13,0.78) 100%)' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(20,17,13,0.55) 0%, rgba(20,17,13,0.10) 65%, transparent 100%)' }} />
 
-        <div className="container-wide" style={{ position: 'relative', paddingTop: 96, paddingBottom: 96, minHeight: 'min(78vh, 760px)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 48 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, color: 'var(--tartan-cream)' }}>
-            <div className="eyebrow" style={{ color: 'var(--tartan-gold)' }}>A foundation, est. 1893</div>
-          </div>
-
+        {/* MCA-91: the "A foundation, est. 1893" eyebrow was removed. The
+            foundation formed in 2024; 1893 is when W.T. acquired the land. */}
+        <div className="container-wide" style={{ position: 'relative', paddingTop: 96, paddingBottom: 96, minHeight: 'min(78vh, 760px)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 48 }}>
           <div>
             <h1 className="h-display" style={{ maxWidth: '14ch', color: 'var(--tartan-cream)', textShadow: '0 2px 24px rgba(0,0,0,0.35)' }}>
               A century of weather,<br />
