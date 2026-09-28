@@ -22,4 +22,9 @@ describe('/visit', () => {
     expect(screen.queryByRole('link', { name: /support the work/i })).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: /back to home/i })).toHaveClass('btn-primary')
   })
+
+  it('makes no open-days claim (MCA-91: none are scheduled)', async () => {
+    const { container } = render(await VisitPage())
+    expect(container.textContent).not.toMatch(/open days/i)
+  })
 })

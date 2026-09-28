@@ -24,6 +24,17 @@ export function donationsEnabled(): boolean {
   return process.env.NEXT_PUBLIC_DONATIONS_ENABLED === 'true'
 }
 
+/**
+ * Whether the temporary design tools (TweaksPanel + its "Design Options"
+ * button, ONBOARDING decision 2) are shown. Fails closed like donations: only
+ * "true" turns them on, so prod ("false") and anything unset hide them.
+ *
+ * TODO(MCA-24): remove with TweaksPanel/TweaksContext once the design is locked.
+ */
+export function designToolsEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_DESIGN_TOOLS_ENABLED === 'true'
+}
+
 /** True for links into the donation flow (`/donate`, `/donate/...`, `/donate?x`, `/donate#x`). */
 export function isDonateHref(href: string): boolean {
   return href === DONATE_PATH || /^\/donate(?=[/?#])/.test(href)

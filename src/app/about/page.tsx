@@ -63,56 +63,41 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      {/* ── What still stands — structured data, migrates in Phase 4 ─────── */}
-      <section className="section">
-        <div className="container">
-          <SectionHead eyebrow="What still stands" title="The proofs <em>of a working farm.</em>" />
-          <div style={{ marginTop: 56, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
-            {[
-              { category: 'Outbuilding', name: 'The mule barn',           desc: 'Over a hundred years old. Housed the mules that pulled tenant farmers’ plows and hauled pine rosin from the forests.' },
-              { category: 'Residence',   name: 'A tenant house',          desc: 'Standing in the condition the families would have known — a direct window into how forty acres was farmed.' },
-              { category: 'Civic',       name: 'The single-room school',  desc: 'Where the children of the farm learned their letters.' },
-              { category: 'Commerce',    name: 'The commissary',          desc: 'Still standing, in disrepair. Account books survive, with every credit transaction recorded by name.' },
-              { category: 'Forest',      name: 'The old-growth pines',    desc: 'Roughly twenty long-leaf pines adjacent to the home — likely among the last survivors of the South’s original long-leaf forest.' },
-              { category: 'Built',       name: 'The Main House',          desc: 'Acquired in 1893 as a 350-square-foot cottage, expanded by 1900, preserved largely unchanged for seventy-five years.' },
-            ].map((b) => (
-              <div key={b.name} style={{ borderTop: '1.5px solid var(--c-primary)', paddingTop: 18 }}>
-                <div className="dateline">{b.category}</div>
-                <h3 className="display" style={{ fontSize: 22, marginTop: 8, fontWeight: 500 }}>{b.name}</h3>
-                <p className="muted" style={{ fontSize: 14, marginTop: 6 }}>{b.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Board — structured data, migrates to Firestore in Phase 4 ─────── */}
-      <section className="section">
-        <div className="container">
-          <SectionHead eyebrow="The board" title="Six neighbors and <em>a bookkeeper.</em>" />
-          <div style={{ marginTop: 56, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
-            {board.map((b) => (
-              <div key={b.name} style={{ borderTop: '1.5px solid var(--c-primary)', paddingTop: 18 }}>
-                <div className="dateline">{b.role}</div>
-                <h3 className="display" style={{ fontSize: 22, marginTop: 8, fontWeight: 500 }}>{b.name}</h3>
-                <p className="muted" style={{ fontSize: 14, marginTop: 6 }}>{b.note}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Partners ──────────────────────────────────────────────────────── */}
-      <section style={{ borderTop: '1px solid var(--c-line)', borderBottom: '1px solid var(--c-line)', padding: '56px 0' }}>
-        <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 32, alignItems: 'center' }}>
-            <div className="eyebrow">In partnership with</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, fontFamily: 'var(--f-display)', fontStyle: 'italic', fontSize: 18, color: 'var(--c-text-muted)' }}>
-              {partners.map((p, i) => <span key={p.id}>{p.name}{i < partners.length - 1 ? ' ·' : ''}</span>)}
+      {/* ── Board (MCA-91) ────────────────────────────────────────────────────
+          Rendered only when board members are published: the heading used to
+          show over an empty list once the sample roster was unpublished. The
+          old hardcoded "What still stands" cards were placeholder copy and
+          were removed; buildings now live only in What to See (projects). */}
+      {board.length > 0 && (
+        <section className="section">
+          <div className="container">
+            <SectionHead eyebrow="The board" title="Board of <em>directors.</em>" />
+            <div style={{ marginTop: 56, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
+              {board.map((b) => (
+                <div key={b.name} style={{ borderTop: '1.5px solid var(--c-primary)', paddingTop: 18 }}>
+                  <div className="dateline">{b.role}</div>
+                  <h3 className="display" style={{ fontSize: 22, marginTop: 8, fontWeight: 500 }}>{b.name}</h3>
+                  <p className="muted" style={{ fontSize: 14, marginTop: 6 }}>{b.note}</p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
+
+      {/* ── Partners: rendered only when partners are published (MCA-91) ─── */}
+      {partners.length > 0 && (
+        <section style={{ borderTop: '1px solid var(--c-line)', borderBottom: '1px solid var(--c-line)', padding: '56px 0' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 32, alignItems: 'center' }}>
+              <div className="eyebrow">In partnership with</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, fontFamily: 'var(--f-display)', fontStyle: 'italic', fontSize: 18, color: 'var(--c-text-muted)' }}>
+                {partners.map((p, i) => <span key={p.id}>{p.name}{i < partners.length - 1 ? ' ·' : ''}</span>)}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <AboutDonateStrip />
     </main>

@@ -196,7 +196,7 @@ There is no hardcoded content file. Narrative pages live in the `pages` collecti
 
 ### 2. TweaksPanel is a temporary design tool
 
-[TweaksPanel](src/components/ui/TweaksPanel.tsx) and [TweaksContext](src/context/TweaksContext.tsx) expose live controls for switching hero variants, color modes, typography pairs, and tartan intensity. **Not a permanent user-facing feature.** Will be removed once the design is locked.
+[TweaksPanel](src/components/ui/TweaksPanel.tsx) and [TweaksContext](src/context/TweaksContext.tsx) expose live controls for switching hero variants, color modes, typography pairs, and tartan intensity. **Not a permanent user-facing feature.** Will be removed once the design is locked (MCA-24). Until then it's shown only on dev and uat: `NEXT_PUBLIC_DESIGN_TOOLS_ENABLED` is `"true"` there and `"false"` on prod, and `designToolsEnabled()` in `src/lib/features.ts` fails closed like the donations flag (MCA-91). Prod always renders the defaults (the photo hero).
 
 ### 3. Firebase is the only backend
 
@@ -375,7 +375,7 @@ GitHub Actions runs **only as a CI gate**, on PRs into and pushes to `develop`, 
 - `apphosting.yaml` is shared by every backend: 1 CPU, 512 MB memory, 0–2 instances, 80 concurrent connections. **No env vars.** Keep it environment-neutral.
 - Each backend's **Environment** setting (backend → Settings → Environment) selects an override file, merged over the base by variable name:
   - `legacy` → `apphosting.legacy.yaml`: the live `mcarthur-tour` backend's project id, bucket, and Secret Manager references (deleted at decommission, MCA-59).
-  - `dev` / `uat` / `prod` → `apphosting.{dev,uat,prod}.yaml`: the `mcarthur-web-*` foundation backends. The emulator-safety flag, plus the donations feature flag (decision 8); Firebase config is injected by App Hosting and the Admin SDK is keyless (decision 4). The three files must stay identical apart from comments and `NEXT_PUBLIC_DONATIONS_ENABLED`, which must be `"false"` on prod.
+  - `dev` / `uat` / `prod` → `apphosting.{dev,uat,prod}.yaml`: the `mcarthur-web-*` foundation backends. The emulator-safety flag, plus the donations and design-tools feature flags (decisions 8 and 2); Firebase config is injected by App Hosting and the Admin SDK is keyless (decision 4). The three files must stay identical apart from comments and the per-env flags `NEXT_PUBLIC_DONATIONS_ENABLED` and `NEXT_PUBLIC_DESIGN_TOOLS_ENABLED`, both of which must be `"false"` on prod.
 - App Hosting rules learned the hard way (MCA-44): a secret referenced in the base file fails the build in any project without it, and an override **can't blank** a variable (`value: ""` is rejected). Guard tests: `src/test/apphostingLegacy.test.ts`, `src/test/apphostingFoundation.test.ts`.
 
 ### Config and Secrets

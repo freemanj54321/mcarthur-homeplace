@@ -25,3 +25,11 @@ env:
   - variable: NEXT_PUBLIC_DONATIONS_ENABLED
     value: "false"
     availability: [BUILD, RUNTIME]
+
+  # Design tools flag (MCA-91): the temporary TweaksPanel / "Design Options"
+  # switcher is for reviewing designs on dev and uat, never the public site.
+  # Read by src/lib/features.ts; anything but "true" is off.
+  # TODO(MCA-24): remove with the TweaksPanel once the design is locked.
+  - variable: NEXT_PUBLIC_DESIGN_TOOLS_ENABLED
+    value: "false"
+    availability: [BUILD, RUNTIME]

@@ -14,10 +14,8 @@ export default async function VisitPage() {
         <h1 className="h-display" style={{ marginTop: 18, maxWidth: '14ch', marginInline: 'auto' }}>
           The porch is <em>open.</em>
         </h1>
-        <p className="lead" style={{ marginTop: 24, marginInline: 'auto', maxWidth: '46ch' }}>
-          We host open days throughout the season. No tickets, no pressure —
-          just the porch and whoever happens to be on it.
-        </p>
+        {/* MCA-91: the "open days throughout the season" copy was removed; no
+            open days are scheduled yet. */}
         <div style={{ marginTop: 56, display: 'flex', flexDirection: 'column', gap: 0, maxWidth: 640, marginInline: 'auto', borderTop: '1px solid var(--c-line)' }}>
           {events.map((e) => (
             <div key={e.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 24, padding: '24px 0', borderBottom: '1px solid var(--c-line-soft)', textAlign: 'left' }}>
