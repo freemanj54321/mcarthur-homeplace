@@ -4,10 +4,14 @@ import {
   buildDownloadUrl,
   collectObjects,
   findSourceBucketMentions,
+  importedPhotoDoc,
+  importedPhotoId,
   migrateContent,
   parseDownloadUrl,
+  planPhotoImport,
   reconcile,
   rewriteDoc,
+  type BucketObject,
   type ContentCollection,
   type MigrationPorts,
   type SourceDoc,
@@ -140,12 +144,15 @@ describe('findSourceBucketMentions', () => {
 
 // ── Orchestration against in-memory ports ──────────────────────────────────
 
-function fakePorts(source: Partial<Record<ContentCollection, SourceDoc[]>>, opts: { dest?: Partial<Record<ContentCollection, string[]>>; sourceObjects?: string[]; destObjects?: string[] } = {}) {
+function fakePorts(
+  source: Partial<Record<ContentCollection, SourceDoc[]>>,
+  opts: { dest?: Partial<Record<ContentCollection, string[]>>; sourceObjects?: string[]; destObjects?: string[]; bucket?: BucketObject[] } = {},
+) {
   const dest = new Map<string, Map<string, Record<string, unknown>>>()
   for (const c of CONTENT_COLLECTIONS) {
     dest.set(c, new Map((opts.dest?.[c] ?? []).map((id) => [id, { stale: true }])))
   }
-  const sourceObjects = new Set(opts.sourceObjects ?? [])
+  const sourceObjects = new Set([...(opts.sourceObjects ?? []), ...(opts.bucket ?? []).map((o) => o.path)])
   const destObjects = new Set(opts.destObjects ?? [])
   const copies: string[] = []
   const ports: MigrationPorts = {
@@ -162,6 +169,7 @@ function fakePorts(source: Partial<Record<ContentCollection, SourceDoc[]>>, opts
       destObjects.add(p)
       return { token: `tok-${p}`, reused }
     },
+    listSourceObjects: async () => opts.bucket ?? [],
   }
   return { ports, dest, copies }
 }
@@ -184,7 +192,8 @@ describe('migrateContent', () => {
 
     expect(copies).toEqual([])
     expect([...dest.get('projects')!.keys()]).toEqual(['old'])
-    expect(report.collections[0]).toMatchObject({ sourceDocs: 2, written: 0, extraInDest: ['old'], pruned: 0, destDocs: 1 })
+    expect(report.collections[0]).toMatchObject({ sourceDocs: 2, imported: 0, written: 0, extraInDest: ['old'], pruned: 0, destDocs: 1 })
+    expect(report.photoImport).toBeNull()
     expect(report.objects).toEqual({ total: 2, copied: 0, reused: 0, missing: ['p/missing.jpg'] })
     expect(lines[0]).toContain('projects: 2 source, 0 written, 1 extra in dest (0 pruned), 1 in dest')
   })
@@ -233,5 +242,171 @@ describe('migrateContent', () => {
 
   it('never includes the editors allowlist', () => {
     expect(CONTENT_COLLECTIONS).not.toContain('editors')
+  })
+})
+
+// ── Unreferenced photo import (MCA-90) ─────────────────────────────────────
+
+const obj = (path: string, md5 = `md5-${path}`, size = 100): BucketObject => ({ path, md5Hash: md5, size })
+
+describe('planPhotoImport', () => {
+  it('skips folder markers, empty objects and non-web images, and orders imports naturally', () => {
+    const plan = planPhotoImport(
+      [obj('Onion Barn/', '', 0), obj('Other/empty.jpg', 'e', 0), obj('Big House/scan.HEIC'), obj('Big House/IMG_10.jpg'), obj('Big House/IMG_9.JPG')],
+      new Set(),
+    )
+    expect(plan.imports.map((i) => i.path)).toEqual(['Big House/IMG_9.JPG', 'Big House/IMG_10.jpg'])
+    expect(plan.skipped).toEqual([
+      { path: 'Big House/scan.HEIC', reason: 'not-a-web-image' },
+      { path: 'Onion Barn/', reason: 'folder' },
+      { path: 'Other/empty.jpg', reason: 'empty' },
+    ])
+    expect(plan.duplicates).toEqual([])
+  })
+
+  it('drops byte-identical copies, keeping the name without a " (n)" suffix', () => {
+    const plan = planPhotoImport(
+      [obj('C/IMG_1 (2).jpg', 'same'), obj('C/IMG_1.jpg', 'same'), obj('C/IMG_1 (1).jpg', 'same')],
+      new Set(),
+    )
+    expect(plan.imports.map((i) => i.path)).toEqual(['C/IMG_1.jpg'])
+    expect(plan.duplicates).toEqual([
+      { path: 'C/IMG_1 (1).jpg', keptPath: 'C/IMG_1.jpg' },
+      { path: 'C/IMG_1 (2).jpg', keptPath: 'C/IMG_1.jpg' },
+    ])
+  })
+
+  it('keeps a " (n)" file whose bytes differ: same name is not a duplicate', () => {
+    const plan = planPhotoImport([obj('C/IMG_1.jpg', 'a'), obj('C/IMG_1 (1).jpg', 'b')], new Set())
+    expect(plan.imports.map((i) => i.path)).toEqual(['C/IMG_1 (1).jpg', 'C/IMG_1.jpg'])
+    expect(plan.duplicates).toEqual([])
+  })
+
+  it('keeps the shortest path when no copy is suffixed, and never dedupes objects without an MD5', () => {
+    const plan = planPhotoImport(
+      [obj('Moving House/x.jpg', 'same'), obj('x.jpg', 'same'), obj('c1.jpg', ''), obj('c2.jpg', '')],
+      new Set(),
+    )
+    expect(plan.imports.map((i) => i.path)).toEqual(['c1.jpg', 'c2.jpg', 'x.jpg'])
+    expect(plan.duplicates).toEqual([{ path: 'Moving House/x.jpg', keptPath: 'x.jpg' }])
+  })
+
+  it('never imports referenced objects, and treats copies of one as duplicates', () => {
+    const plan = planPhotoImport([obj('p/card.jpg', 'h'), obj('raw/card copy.jpg', 'h'), obj('raw/other.jpg')], new Set(['p/card.jpg']))
+    expect(plan.imports.map((i) => i.path)).toEqual(['raw/other.jpg'])
+    expect(plan.duplicates).toEqual([{ path: 'raw/card copy.jpg', keptPath: 'p/card.jpg' }])
+  })
+})
+
+describe('importedPhotoId', () => {
+  it('is stable, readable, and distinguishes paths that slug the same', () => {
+    const id = importedPhotoId('Cooper Conner House/IMG_9261.jpg')
+    expect(id).toBe(importedPhotoId('Cooper Conner House/IMG_9261.jpg'))
+    expect(id).toMatch(/^legacy-cooper-conner-house-img-9261-jpg-[0-9a-f]{8}$/)
+    expect(importedPhotoId('a b.jpg')).not.toBe(importedPhotoId('a-b.jpg'))
+    expect(id).not.toContain('/')
+  })
+})
+
+describe('importedPhotoDoc', () => {
+  it('is unassigned, unfeatured and archival, with the original path as filename', () => {
+    const at = new FakeTimestamp(1)
+    expect(importedPhotoDoc('Big House/a.jpg', 'https://u', 7, at)).toEqual({
+      filename: 'Big House/a.jpg',
+      storagePath: 'Big House/a.jpg',
+      downloadUrl: 'https://u',
+      caption: '',
+      altText: '',
+      project: null,
+      category: 'archival',
+      featured: false,
+      order: 7,
+      dateTaken: null,
+      uploadedAt: at,
+      updatedAt: at,
+      createdBy: 'migrate-content',
+      updatedBy: 'migrate-content',
+    })
+  })
+})
+
+describe('migrateContent with importUnreferenced', () => {
+  const base = { sourceBucket: SRC, destBucket: DST }
+  const bucket = [obj('p/card.jpg'), obj('Big House/a.jpg', 'h'), obj('Big House/a (1).jpg', 'h'), obj('Big House/b.jpg'), obj('Other/', '', 0)]
+  const existingPhoto: SourceDoc = { id: 'ph1', data: { storagePath: 'p/card.jpg', downloadUrl: srcUrl('p/card.jpg'), order: 4 } }
+
+  it('dry run: plans the import and reports it, writing nothing', async () => {
+    const { ports, dest, copies } = fakePorts({ projects: [project('x', 'p/card.jpg')] }, { bucket })
+    const lines: string[] = []
+    const report = await migrateContent(ports, { ...base, apply: false, prune: true, importUnreferenced: true, log: (l) => lines.push(l) })
+
+    expect(copies).toEqual([])
+    expect(dest.get('photos')!.size).toBe(0)
+    expect(report.photoImport!.imports.map((i) => i.path)).toEqual(['Big House/a.jpg', 'Big House/b.jpg'])
+    expect(report.photoImport!.duplicates).toEqual([{ path: 'Big House/a (1).jpg', keptPath: 'Big House/a.jpg' }])
+    expect(report.objects).toMatchObject({ total: 3, missing: [] })
+    expect(lines.find((l) => l.startsWith('photos:'))).toContain('photos: 0 source + 2 imported, 0 written')
+  })
+
+  it('apply: copies and registers each kept image after existing photos, and reconciles', async () => {
+    const at = new FakeTimestamp(1)
+    const { ports, dest, copies } = fakePorts({ photos: [existingPhoto] }, { bucket, dest: { photos: ['stale'] } })
+    const report = await migrateContent(ports, { ...base, apply: true, prune: true, importUnreferenced: true, importedAt: at })
+
+    expect(copies.sort()).toEqual(['Big House/a.jpg', 'Big House/b.jpg', 'p/card.jpg'])
+    const photos = dest.get('photos')!
+    expect([...photos.keys()].sort()).toEqual(['ph1', importedPhotoId('Big House/a.jpg'), importedPhotoId('Big House/b.jpg')].sort())
+    expect(photos.get(importedPhotoId('Big House/a.jpg'))).toMatchObject({
+      order: 5,
+      project: null,
+      uploadedAt: at,
+      downloadUrl: dstUrl('Big House/a.jpg', 'tok-Big House/a.jpg'),
+    })
+    expect(photos.get(importedPhotoId('Big House/b.jpg'))).toMatchObject({ order: 6 })
+    expect(report.collections.find((c) => c.collection === 'photos')).toMatchObject({ sourceDocs: 1, imported: 2, written: 1, pruned: 1, destDocs: 3 })
+    expect(reconcile(report)).toEqual([])
+  })
+
+  it('re-run: imported docs are updated in place and never pruned', async () => {
+    const ids = ['Big House/a.jpg', 'Big House/b.jpg'].map(importedPhotoId)
+    const { ports, dest } = fakePorts({ projects: [project('x', 'p/card.jpg')] }, { bucket, dest: { photos: ids } })
+    const report = await migrateContent(ports, { ...base, apply: true, prune: true, importUnreferenced: true, collections: ['photos'] })
+    expect([...dest.get('photos')!.keys()].sort()).toEqual([...ids].sort())
+    expect(report.collections).toHaveLength(1)
+    expect(report.collections[0]).toMatchObject({ extraInDest: [], pruned: 0, imported: 2, destDocs: 2 })
+    expect(reconcile(report)).toEqual([])
+  })
+
+  it('with --collections photos, still treats images other collections use as referenced', async () => {
+    const { ports } = fakePorts({ projects: [project('x', 'p/card.jpg')] }, { bucket })
+    const report = await migrateContent(ports, { ...base, apply: false, prune: false, importUnreferenced: true, collections: ['photos'] })
+    expect(report.photoImport!.imports.map((i) => i.path)).not.toContain('p/card.jpg')
+    expect(report.collections.map((c) => c.collection)).toEqual(['photos'])
+  })
+
+  it('skips the import when photos is not among the collections', async () => {
+    const { ports } = fakePorts({}, { bucket })
+    const report = await migrateContent(ports, { ...base, apply: false, prune: false, importUnreferenced: true, collections: ['projects'] })
+    expect(report.photoImport).toBeNull()
+  })
+
+  it('does not register an image that vanished before the copy, and reports it', async () => {
+    const { ports, dest } = fakePorts({}, { bucket: [obj('Big House/a.jpg')] })
+    ports.copyObject = async () => null
+    const report = await migrateContent(ports, { ...base, apply: true, prune: false, importUnreferenced: true, collections: ['photos'] })
+    expect(dest.get('photos')!.size).toBe(0)
+    expect(report.objects.missing).toEqual(['Big House/a.jpg'])
+    expect(reconcile(report)).toEqual(['1 Storage object(s) missing from the source bucket'])
+  })
+
+  it('names imported docs in a reconciliation mismatch', () => {
+    const report = {
+      apply: true,
+      collections: [{ collection: 'photos' as const, sourceDocs: 1, imported: 2, written: 1, extraInDest: [], pruned: 0, destDocs: 2 }],
+      objects: { total: 0, copied: 0, reused: 0, missing: [] },
+      findings: [],
+      photoImport: null,
+    }
+    expect(reconcile(report)).toEqual(['photos: 1 in source (+2 imported) but 2 in destination'])
   })
 })

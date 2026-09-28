@@ -20,6 +20,11 @@
 //      the destination object's download token, then write it.
 // Stored download URLs are absolute and bucket-bound, so skipping step 3 would
 // leave every image loading from the old project (see ONBOARDING, migration note).
+//
+// Unreferenced images (MCA-90): legacy's bucket holds ~230 photos that no doc
+// points at (raw uploads; legacy never had a `photos` collection). Copying only
+// referenced objects would strand them in mcarthur-tour, so by default a run
+// also imports every such image into the photo library, minus exact duplicates.
 
 /** Collections that hold site content. `editors` (the Auth allowlist) is rebuilt per env instead (MCA-51). */
 export const CONTENT_COLLECTIONS = [
@@ -201,6 +206,109 @@ function truncate(value: string, max = 120): string {
   return value.length > max ? `${value.slice(0, max)}…` : value
 }
 
+// ── Unreferenced photo import (MCA-90) ──────────────────────────────────────
+
+/** A source-bucket object as listed by the CLI port. `md5Hash` is '' when Storage has none (composite objects). */
+export type BucketObject = { path: string; md5Hash: string; size: number }
+
+export type PhotoImportPlan = {
+  /** Images to copy and register, in library order. */
+  imports: { path: string; docId: string }[]
+  /** Byte-identical copies left behind, with the copy that represents them. */
+  duplicates: { path: string; keptPath: string }[]
+  skipped: { path: string; reason: 'folder' | 'empty' | 'not-a-web-image' }[]
+}
+
+// Formats browsers render. Anything else (HEIC, RAW, PDFs…) is reported, not imported.
+const WEB_IMAGE_RE = /\.(jpe?g|png|gif|webp|avif)$/i
+// "IMG_1 (1).jpg": the suffix a re-upload or OS copy adds.
+const COPY_SUFFIX_RE = / \(\d+\)(?=\.[^./]+$)/
+
+// Imported docs are written by this script, not an editor; the UIDs fields say so.
+const IMPORTED_BY = 'migrate-content'
+
+/**
+ * Deterministic `photos` doc id for an imported object, so re-runs update the
+ * same doc instead of adding another. Readable slug + FNV-1a hash of the full
+ * path (slugs alone collide: "a b.jpg" vs "a-b.jpg").
+ */
+export function importedPhotoId(path: string): string {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < path.length; i++) {
+    hash ^= path.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193) >>> 0
+  }
+  const slug = path.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80)
+  return `legacy-${slug}-${hash.toString(16).padStart(8, '0')}`
+}
+
+/** Which image of a byte-identical group to keep: the referenced one, else no " (n)" suffix, else shortest, else first by name. */
+function keeperRank(a: string, b: string, referenced: ReadonlySet<string>): number {
+  const byRef = Number(referenced.has(b)) - Number(referenced.has(a))
+  if (byRef !== 0) return byRef
+  const bySuffix = Number(COPY_SUFFIX_RE.test(a)) - Number(COPY_SUFFIX_RE.test(b))
+  if (bySuffix !== 0) return bySuffix
+  return a.length - b.length || a.localeCompare(b)
+}
+
+/**
+ * Plan the import of source images no content doc references. Duplicates are
+ * decided by content (MD5), never by name alone: "x (1).jpg" with different
+ * bytes from "x.jpg" is a different photo and is kept.
+ */
+export function planPhotoImport(objects: readonly BucketObject[], referenced: ReadonlySet<string>): PhotoImportPlan {
+  const plan: PhotoImportPlan = { imports: [], duplicates: [], skipped: [] }
+  const groups = new Map<string, string[]>()
+  for (const o of objects) {
+    if (o.path.endsWith('/')) plan.skipped.push({ path: o.path, reason: 'folder' })
+    else if (o.size === 0) plan.skipped.push({ path: o.path, reason: 'empty' })
+    else if (!WEB_IMAGE_RE.test(o.path)) plan.skipped.push({ path: o.path, reason: 'not-a-web-image' })
+    else {
+      const key = o.md5Hash ? `md5:${o.md5Hash}` : `path:${o.path}`
+      groups.set(key, [...(groups.get(key) ?? []), o.path])
+    }
+  }
+
+  const kept: string[] = []
+  for (const paths of groups.values()) {
+    const [keeper, ...rest] = [...paths].sort((a, b) => keeperRank(a, b, referenced))
+    for (const path of rest) if (!referenced.has(path)) plan.duplicates.push({ path, keptPath: keeper })
+    // A referenced keeper is already copied with its content doc.
+    if (!referenced.has(keeper)) kept.push(keeper)
+  }
+
+  const natural = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true })
+  plan.imports = kept.sort(natural).map((path) => ({ path, docId: importedPhotoId(path) }))
+  plan.duplicates.sort((a, b) => natural(a.path, b.path))
+  plan.skipped.sort((a, b) => natural(a.path, b.path))
+  return plan
+}
+
+/**
+ * The `photos` doc for an imported image: unassigned (`project: null`) and not
+ * featured, so it shows in /admin/photos but on no public page until an editor
+ * gives it a project. `category` must be one of the schema's values; `archival`
+ * is the placeholder editors are expected to change.
+ */
+export function importedPhotoDoc(path: string, downloadUrl: string, order: number, importedAt: unknown): PlainObject {
+  return {
+    filename: path,
+    storagePath: path,
+    downloadUrl,
+    caption: '',
+    altText: '',
+    project: null,
+    category: 'archival',
+    featured: false,
+    order,
+    dateTaken: null,
+    uploadedAt: importedAt,
+    updatedAt: importedAt,
+    createdBy: IMPORTED_BY,
+    updatedBy: IMPORTED_BY,
+  }
+}
+
 // ── Orchestration ───────────────────────────────────────────────────────────
 
 export type SourceDoc = { id: string; data: PlainObject }
@@ -220,6 +328,8 @@ export type MigrationPorts = ValueHooks & {
    * object already in the destination (re-runs, delta syncs).
    */
   copyObject: (path: string) => Promise<{ token: string; reused: boolean } | null>
+  /** Every object in the source bucket. Only called when importing unreferenced photos. */
+  listSourceObjects: () => Promise<BucketObject[]>
 }
 
 export type MigrationOptions = {
@@ -230,12 +340,18 @@ export type MigrationOptions = {
   apply: boolean
   /** Delete destination docs that don't exist in the source, so counts reconcile. */
   prune: boolean
+  /** Also import source images no doc references into `photos` (MCA-90). Needs `photos` among the collections. */
+  importUnreferenced?: boolean
+  /** Value stored as `uploadedAt`/`updatedAt` on imported photo docs (the CLI passes a Firestore Timestamp). */
+  importedAt?: unknown
   log?: (line: string) => void
 }
 
 export type CollectionReport = {
   collection: ContentCollection
   sourceDocs: number
+  /** Photo docs created from unreferenced images (`photos` only). Counted with `sourceDocs` when reconciling. */
+  imported: number
   written: number
   /** Destination docs absent from the source (deleted when `prune`). */
   extraInDest: string[]
@@ -249,6 +365,8 @@ export type MigrationReport = {
   collections: CollectionReport[]
   objects: { total: number; copied: number; reused: number; missing: string[] }
   findings: (DocFinding & { collection: ContentCollection; id: string })[]
+  /** Null when the import was off or `photos` wasn't migrated. */
+  photoImport: PhotoImportPlan | null
 }
 
 /** Copy content collections and their Storage objects from the source to the destination project. */
@@ -262,6 +380,7 @@ export async function migrateContent(ports: MigrationPorts, options: MigrationOp
     collections: [],
     objects: { total: 0, copied: 0, reused: 0, missing: [] },
     findings: [],
+    photoImport: null,
   }
 
   // Each object is resolved once, however many docs point at it.
@@ -283,22 +402,47 @@ export async function migrateContent(ports: MigrationPorts, options: MigrationOp
     else report.objects.copied++
   }
 
-  for (const collection of collections) {
+  // Read every collection first: the photo import needs the full set of
+  // referenced objects before `photos` (third in order) is processed. When
+  // importing, that set comes from ALL content collections even if only some
+  // are being migrated, or a project's card image would look unreferenced and
+  // be imported again as a stray library photo.
+  const importing = Boolean(options.importUnreferenced) && collections.includes('photos')
+  const toRead = importing ? CONTENT_COLLECTIONS : collections
+  const sources = new Map<ContentCollection, { doc: SourceDoc; objects: string[]; findings: DocFinding[] }[]>()
+  const referenced = new Set<string>()
+  for (const collection of toRead) {
     const docs = await ports.listSourceDocs(collection)
+    sources.set(
+      collection,
+      docs.map((doc) => {
+        const { objects, findings } = collectObjects(doc.data, options.sourceBucket, ports)
+        for (const path of objects) referenced.add(path)
+        return { doc, objects, findings }
+      }),
+    )
+  }
+
+  if (importing) report.photoImport = planPhotoImport(await ports.listSourceObjects(), referenced)
+
+  for (const collection of collections) {
+    const entries = sources.get(collection) ?? []
+    const imports = collection === 'photos' ? (report.photoImport?.imports ?? []) : []
     const destIdsBefore = await ports.listDestIds(collection)
-    const sourceIds = new Set(docs.map((d) => d.id))
+    // Imported docs count as source docs, so --prune keeps them on re-runs.
+    const sourceIds = new Set([...entries.map((e) => e.doc.id), ...imports.map((i) => i.docId)])
     const extraInDest = destIdsBefore.filter((id) => !sourceIds.has(id))
     const entry: CollectionReport = {
       collection,
-      sourceDocs: docs.length,
+      sourceDocs: entries.length,
+      imported: 0,
       written: 0,
       extraInDest,
       pruned: 0,
       destDocs: destIdsBefore.length,
     }
 
-    for (const doc of docs) {
-      const { objects, findings } = collectObjects(doc.data, options.sourceBucket, ports)
+    for (const { doc, objects, findings } of entries) {
       for (const f of findings) report.findings.push({ ...f, collection, id: doc.id })
       for (const path of objects) await resolveObject(path)
       if (!options.apply) continue
@@ -316,6 +460,22 @@ export async function migrateContent(ports: MigrationPorts, options: MigrationOp
       entry.written++
     }
 
+    // Imported photos go after any existing library order.
+    let order = entries.reduce((max, e) => {
+      const o = e.doc.data.order
+      return typeof o === 'number' && o > max ? o : max
+    }, -1)
+    for (const { path, docId } of imports) {
+      order++
+      await resolveObject(path)
+      if (!options.apply) continue
+      const token = tokens.get(path)
+      if (!token) continue // missing: already in report.objects.missing
+      const url = buildDownloadUrl(options.destBucket, path, token)
+      await ports.writeDestDoc(collection, docId, importedPhotoDoc(path, url, order, options.importedAt ?? null))
+      entry.imported++
+    }
+
     if (options.apply && options.prune) {
       for (const id of extraInDest) {
         await ports.deleteDestDoc(collection, id)
@@ -325,8 +485,9 @@ export async function migrateContent(ports: MigrationPorts, options: MigrationOp
     if (options.apply) entry.destDocs = (await ports.listDestIds(collection)).length
 
     report.collections.push(entry)
+    const importNote = imports.length > 0 ? ` + ${options.apply ? entry.imported : imports.length} imported` : ''
     log(
-      `${collection}: ${entry.sourceDocs} source, ${entry.written} written, ` +
+      `${collection}: ${entry.sourceDocs} source${importNote}, ${entry.written} written, ` +
         `${entry.extraInDest.length} extra in dest${options.prune ? ` (${entry.pruned} pruned)` : ''}, ${entry.destDocs} in dest`,
     )
   }
@@ -336,13 +497,16 @@ export async function migrateContent(ports: MigrationPorts, options: MigrationOp
 
 /**
  * Reconciliation (MCA-49): each collection's destination count matches the
- * source, and no image was missing. Returns the problems; empty means clean.
+ * source (plus imported photos), and no image was missing. Returns the
+ * problems; empty means clean.
  */
 export function reconcile(report: MigrationReport): string[] {
   const problems: string[] = []
   for (const c of report.collections) {
-    if (c.destDocs !== c.sourceDocs) {
-      problems.push(`${c.collection}: ${c.sourceDocs} in source but ${c.destDocs} in destination`)
+    const expected = c.sourceDocs + c.imported
+    if (c.destDocs !== expected) {
+      const imported = c.imported > 0 ? ` (+${c.imported} imported)` : ''
+      problems.push(`${c.collection}: ${c.sourceDocs} in source${imported} but ${c.destDocs} in destination`)
     }
   }
   if (report.objects.missing.length > 0) {

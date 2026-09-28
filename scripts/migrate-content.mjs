@@ -27,6 +27,13 @@
  *   --source-bucket <name>    Override the source bucket (default <project-id>.firebasestorage.app).
  *   --dest-bucket <name>      Override the destination bucket (same default).
  *   --report <file>           Also write the full report as JSON.
+ *   --no-import-unreferenced  Don't import unreferenced source images (on by default, MCA-90).
+ *
+ * Unreferenced images (MCA-90): every run also copies each source image that no
+ * content doc references and registers it in the photo library as an
+ * unassigned, unfeatured `archival` photo (visible in /admin/photos, on no
+ * public page). Byte-identical copies (same MD5) are imported once. Folder
+ * markers, empty objects and non-web formats are skipped and listed.
  *
  * Credentials:
  *   Destination: Application Default Credentials only. The foundation org blocks
@@ -47,7 +54,7 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 import { applicationDefault, cert, initializeApp } from 'firebase-admin/app'
-import { DocumentReference, getFirestore } from 'firebase-admin/firestore'
+import { DocumentReference, Timestamp, getFirestore } from 'firebase-admin/firestore'
 import { getStorage } from 'firebase-admin/storage'
 import {
   CONTENT_COLLECTIONS,
@@ -75,7 +82,9 @@ const { values: args } = parseArgs({
     'source-bucket': { type: 'string' },
     'dest-bucket': { type: 'string' },
     report: { type: 'string' },
+    'import-unreferenced': { type: 'boolean', default: true },
   },
+  allowNegative: true,
 })
 
 // Seed/E2E variables would silently redirect the Admin SDK to a local emulator.
@@ -115,9 +124,9 @@ const destDb = getFirestore(destApp)
 const sourceBucket = getStorage(sourceApp).bucket(sourceBucketName)
 const destBucket = getStorage(destApp).bucket(destBucketName)
 
-// TODO(MCA-48): these ports haven't touched real Firebase yet. The logic they
-// feed is unit-tested (contentMigration.test.ts); the first read-only dry run
-// against legacy → dev is the check for the ports themselves.
+// The logic these ports feed is unit-tested (contentMigration.test.ts). DONE:
+// the read ports were proven by the first legacy → dev dry run (MCA-48,
+// 2026-09-28). TODO(MCA-48): the write ports are proven by the first --apply.
 /** @type {import('../src/lib/migration/contentMigration.ts').MigrationPorts} */
 const ports = {
   isReference: (value) => value instanceof DocumentReference,
@@ -170,6 +179,11 @@ const ports = {
     })
     return { token, reused: false }
   },
+
+  async listSourceObjects() {
+    const [files] = await sourceBucket.getFiles({ autoPaginate: true })
+    return files.map((f) => ({ path: f.name, md5Hash: f.metadata.md5Hash ?? '', size: Number(f.metadata.size ?? 0) }))
+  },
 }
 
 // ── Run ─────────────────────────────────────────────────────────────────────
@@ -186,16 +200,30 @@ const report = await migrateContent(ports, {
   collections,
   apply: args.apply,
   prune: args.prune,
+  importUnreferenced: args['import-unreferenced'],
+  importedAt: Timestamp.now(),
   log: (line) => console.log(`  ${line}`),
 })
 
 const { objects } = report
 console.log(
-  `Images: ${objects.total} referenced` +
+  `Images: ${objects.total} to copy` +
     (args.apply ? `, ${objects.copied} copied, ${objects.reused} already there` : '') +
     `, ${objects.missing.length} missing from the source`,
 )
 for (const path of objects.missing) console.log(`  missing: ${path}`)
+
+const { photoImport } = report
+if (photoImport) {
+  console.log(
+    `Unreferenced images: ${photoImport.imports.length} imported into the photo library as unassigned, ` +
+      `${photoImport.duplicates.length} duplicate(s) dropped, ${photoImport.skipped.length} skipped`,
+  )
+  for (const d of photoImport.duplicates) console.log(`  duplicate: ${d.path} (same bytes as ${d.keptPath})`)
+  for (const s of photoImport.skipped) console.log(`  skipped (${s.reason}): ${s.path}`)
+} else if (!args['import-unreferenced']) {
+  console.log('Unreferenced images: not imported (--no-import-unreferenced)')
+}
 
 if (report.findings.length > 0) {
   console.log(`Findings (${report.findings.length}):`)
