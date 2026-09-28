@@ -44,11 +44,14 @@ export default defineConfig({
       // Raised 2026-09-27 by MCA-47 (content migration module + tests).
       // Actuals then: 76.4 lines / 75.78 functions / 75.9 statements /
       // 70.52 branches.
+      // Raised 2026-09-28 by MCA-90 (unreferenced photo import + tests).
+      // Actuals then: 79.16 lines / 77.85 functions / 79.2 statements /
+      // 74.57 branches.
       thresholds: {
-        lines: 75,
-        functions: 74,
-        statements: 74,
-        branches: 69,
+        lines: 79,
+        functions: 77,
+        statements: 79,
+        branches: 74,
       },
     },
     projects: [

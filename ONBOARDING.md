@@ -2,7 +2,7 @@
 
 > **Canonical copy lives in Notion** ([Project Overview](https://www.notion.so/37066661a975815e994acfb3e3d2d276), under Documentation). This file is a synced local mirror, imported into agent context via `@ONBOARDING.md` in `CLAUDE.md`. When the overview changes, update **both** this file and the Notion page.
 
-> Last Updated: 2026-09-27
+> Last Updated: 2026-09-28
 
 ---
 
@@ -333,7 +333,7 @@ Items with lipsum are awaiting real historical content — the structure is in p
 
 > **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Its project id and bucket now live only in `apphosting.legacy.yaml`; `next.config.ts` and the SDK init resolve per environment (MCA-44). Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
 >
-> **Content copy (MCA-47):** `npm run migrate:content -- --from legacy --to dev` copies the nine content collections (not `editors`), copies each referenced image into the destination bucket with a fresh download token, and rewrites every `downloadUrl` and embedded rich-text URL. It is a **dry run unless `--apply`**, `--prune` removes destination docs not in the source, and prod also needs `--confirm-prod`. After an applied run it checks that doc counts match and every image resolved. The destination uses ADC (foundation login; keys are blocked). The legacy source needs its service-account key via `SOURCE_SA_PATH`, **so keep that key until the final prod copy (MCA-49)**.
+> **Content copy (MCA-47):** `npm run migrate:content -- --from legacy --to dev` copies the nine content collections (not `editors`), copies each referenced image into the destination bucket with a fresh download token, and rewrites every `downloadUrl` and embedded rich-text URL. It also **imports every image no doc references** into the photo library (MCA-90): legacy's ~230 raw uploads, minus byte-identical duplicates (by MD5), folder markers and non-web formats (HEIC). Each one becomes an unassigned, unfeatured `archival` photo, visible in `/admin/photos` but on no public page until an editor sets its project; `--no-import-unreferenced` turns this off. It is a **dry run unless `--apply`**, `--prune` removes destination docs not in the source, and prod also needs `--confirm-prod`. After an applied run it checks that doc counts match and every image resolved. The destination uses ADC (foundation login; keys are blocked). The legacy source needs its service-account key via `SOURCE_SA_PATH`, **so keep that key until the final prod copy (MCA-49)**.
 
 ---
 
