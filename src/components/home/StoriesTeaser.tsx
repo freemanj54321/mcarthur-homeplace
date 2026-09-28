@@ -4,6 +4,9 @@ import { Placeholder } from '@/components/ui/Placeholder'
 import { SectionHead } from '@/components/ui/SectionHead'
 
 export function StoriesTeaser({ news }: { news: NewsItem[] }) {
+  // MCA-91: the section heading used to show over an empty list once the
+  // sample news was unpublished. Render only when there is news to show.
+  if (news.length === 0) return null
   return (
     <section className="section">
       <div className="container">

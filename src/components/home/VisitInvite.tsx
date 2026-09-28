@@ -12,10 +12,8 @@ export function VisitInvite({ events }: { events: EventItem[] }) {
             <h2 className="h-section" style={{ color: 'var(--tartan-cream)', marginTop: 18 }}>
               The porch is <em style={{ color: 'var(--tartan-gold)' }}>open.</em>
             </h2>
-            <p style={{ color: 'rgba(251,247,238,0.75)', marginTop: 24, fontSize: 17, maxWidth: '40ch' }}>
-              We host three or four open days each season. Bring a picnic, a question, or a memory.
-              No tickets, no pressure — just the porch and whoever happens to be on it.
-            </p>
+            {/* MCA-91: the "three or four open days each season" copy was removed;
+                no open days are scheduled yet. */}
             <Link href="/visit" className="btn btn-lg" style={{ background: 'var(--tartan-gold)', color: 'var(--tartan-ink)', borderColor: 'var(--tartan-gold)', marginTop: 24, display: 'inline-flex' }}>
               Plan a visit <span className="arrow">→</span>
             </Link>

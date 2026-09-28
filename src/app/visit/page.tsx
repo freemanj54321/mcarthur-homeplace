@@ -11,14 +11,17 @@ export default async function VisitPage() {
     <main className="page fade-in" style={{ padding: '120px 0' }}>
       <div className="container" style={{ textAlign: 'center' }}>
         <div className="eyebrow" style={{ justifyContent: 'center' }}>Come see for yourself</div>
+        {/* MCA-91: was "The porch is open." over an "open days throughout the
+            season" claim; no visit dates are scheduled yet. */}
         <h1 className="h-display" style={{ marginTop: 18, maxWidth: '14ch', marginInline: 'auto' }}>
-          The porch is <em>open.</em>
+          Visit the <em>homeplace.</em>
         </h1>
-        <p className="lead" style={{ marginTop: 24, marginInline: 'auto', maxWidth: '46ch' }}>
-          We host open days throughout the season. No tickets, no pressure —
-          just the porch and whoever happens to be on it.
-        </p>
-        <div style={{ marginTop: 56, display: 'flex', flexDirection: 'column', gap: 0, maxWidth: 640, marginInline: 'auto', borderTop: '1px solid var(--c-line)' }}>
+        {events.length === 0 && (
+          <p className="lead" style={{ marginTop: 24, marginInline: 'auto', maxWidth: '46ch' }}>
+            We don&apos;t have any visit dates scheduled yet. Please check back here for future dates.
+          </p>
+        )}
+        <div style={{ marginTop: 56, display: 'flex', flexDirection: 'column', gap: 0, maxWidth: 640, marginInline: 'auto', borderTop: events.length > 0 ? '1px solid var(--c-line)' : 'none' }}>
           {events.map((e) => (
             <div key={e.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 24, padding: '24px 0', borderBottom: '1px solid var(--c-line-soft)', textAlign: 'left' }}>
               <div>

@@ -8,8 +8,8 @@ export function HeroCollage() {
       <div className="container-wide">
         <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 1fr', gap: 56, alignItems: 'center' }}>
           <div>
-            <div className="eyebrow">A foundation, est. 1893</div>
-            <h1 className="h-display" style={{ marginTop: 22, maxWidth: '12ch' }}>
+            {/* MCA-91: "A foundation, est. 1893" eyebrow removed (see HeroPhoto). */}
+            <h1 className="h-display" style={{ maxWidth: '12ch' }}>
               The houses<br /><em>are still standing.</em>
             </h1>
             <p className="lead" style={{ marginTop: 28, maxWidth: '46ch' }}>

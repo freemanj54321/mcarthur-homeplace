@@ -2,7 +2,7 @@
 
 > **Canonical copy lives in Notion** ([Project Overview](https://www.notion.so/37066661a975815e994acfb3e3d2d276), under Documentation). This file is a synced local mirror, imported into agent context via `@ONBOARDING.md` in `CLAUDE.md`. When the overview changes, update **both** this file and the Notion page.
 
-> Last Updated: 2026-09-27
+> Last Updated: 2026-09-28
 
 ---
 
@@ -90,6 +90,9 @@ src/
 │   ├── firebase.ts                # Client-side Firebase init (+ opt-in emulator wiring)
 │   ├── firebase-admin.ts          # Server-side Admin SDK (Auth, Firestore, Storage)
 │   ├── firebaseConfig.ts          # Where each SDK gets its config (explicit vs App Hosting-injected); SDK-free
+│   ├── features.ts                # Per-environment feature flags (donations, decision 8)
+│   ├── migration/
+│   │   └── contentMigration.ts    # Pure content-copy logic (collect → copy images → rewrite URLs → reconcile), MCA-47
 │   ├── photos.ts                  # Firestore photo queries (client SDK)
 │   ├── auth/
 │   │   ├── server.ts              # Session verification (server components / actions)
@@ -116,7 +119,7 @@ src/
 └── test/                          # Vitest harness: in-memory Firestore + firebase-admin mock
 
 e2e/                               # Playwright specs (run against the Firebase Emulator Suite)
-scripts/                           # seed-editor / seed-pages / seed-structured / seed-emulator
+scripts/                           # seed-editor / seed-pages / seed-structured / seed-emulator; migrate-content (MCA-47)
 middleware.ts                      # /admin session redirect — Next 16 deprecates `middleware` in favor of `proxy`
 firestore.indexes.json             # Composite index declarations (deployed per environment)
 playwright.config.ts               # E2E config — emulator-backed, project `demo-mcarthur`
@@ -193,7 +196,7 @@ There is no hardcoded content file. Narrative pages live in the `pages` collecti
 
 ### 2. TweaksPanel is a temporary design tool
 
-[TweaksPanel](src/components/ui/TweaksPanel.tsx) and [TweaksContext](src/context/TweaksContext.tsx) expose live controls for switching hero variants, color modes, typography pairs, and tartan intensity. **Not a permanent user-facing feature.** Will be removed once the design is locked.
+[TweaksPanel](src/components/ui/TweaksPanel.tsx) and [TweaksContext](src/context/TweaksContext.tsx) expose live controls for switching hero variants, color modes, typography pairs, and tartan intensity. **Not a permanent user-facing feature.** Will be removed once the design is locked (MCA-24). Until then it's shown only on dev and uat: `NEXT_PUBLIC_DESIGN_TOOLS_ENABLED` is `"true"` there and `"false"` on prod, and `designToolsEnabled()` in `src/lib/features.ts` fails closed like the donations flag (MCA-91). Prod always renders the defaults (the photo hero).
 
 ### 3. Firebase is the only backend
 
@@ -326,8 +329,11 @@ Items with lipsum are awaiting real historical content — the structure is in p
 | Codebase Cleanup & Modularization | Dead-code removal, content-schema extraction, transport-agnostic read layer, security/DX fixes | In progress — content-schema extracted (MCA-25); transport-agnostic read layer landed (MCA-26), unblocking the content API (MCA-53) |
 | Test Coverage & QA | Vitest harness + coverage ratchet, lib backfill, E2E, security/load testing | In progress — harness and E2E scaffold shipped; lib backfill ongoing |
 | **Migrate to Foundation GCP** | Move off personal-account `mcarthur-tour` to **three foundation-owned Firebase projects** (dev/uat/prod) on App Hosting, branch-per-env promotion, versioned content API for future mobile reuse | In progress — foundation Workspace, billing, nonprofit enrollment done (MCA-37). Projects `mcarthur-web-{dev,uat,prod}` (MCA-38), Firestore `nam5` + Storage `us-east1` (MCA-40), web apps (MCA-39). Deployed envs use injected config and a keyless Admin SDK, since org policy blocks keys (MCA-67, MCA-44). **All three App Hosting backends are live** (MCA-46): dev and uat on https at `dev.`/`uat.wtmcarthurhomeplace.org`; prod on the apex + `www`, domain verifying (MCA-52). CI gates all three branches (MCA-45). Next: branch protection (MCA-68), sign-in + editors (MCA-51), content migration (MCA-47–49), legacy decommission (MCA-59). Detail: see **Migrate to Foundation GCP** page in Notion (sibling of the Project Overview under Documentation) |
+| **Website Analytics (GA4)** | Measure and report traffic with GA4: basic tracking on all envs (reported on prod only), no banner for US visitors, consent banner for EU/UK/CH only via a consent platform + Consent Mode v2, monthly board report | Planned (2026-09-27): Linear project with MCA-72 to MCA-87 (Phase 1 US basics, Phase 2 EU/UK consent, Phase 3 engagement). No environment collects data yet. Detail: see **Website Analytics — GA4 Plan** page in Notion (sibling of the Project Overview under Documentation) |
 
 > **Migration note:** the site currently runs in the personal-account project `mcarthur-tour`. Its project id and bucket now live only in `apphosting.legacy.yaml`; `next.config.ts` and the SDK init resolve per environment (MCA-44). Stored image `downloadUrl` values are **absolute URLs** bound to the current bucket, so any content copy must rewrite them (`storagePath` is stored alongside and is the reliable source). New buckets will be `mcarthur-web-{env}.firebasestorage.app`.
+>
+> **Content copy (MCA-47):** `npm run migrate:content -- --from legacy --to dev` copies the nine content collections (not `editors`), copies each referenced image into the destination bucket with a fresh download token, and rewrites every `downloadUrl` and embedded rich-text URL. It also **imports every image no doc references** into the photo library (MCA-90): legacy's ~230 raw uploads, minus byte-identical duplicates (by MD5), folder markers and non-web formats (HEIC). Each one becomes an unassigned, unfeatured `archival` photo, visible in `/admin/photos` but on no public page until an editor sets its project; `--no-import-unreferenced` turns this off. It is a **dry run unless `--apply`**, `--prune` removes destination docs not in the source, and prod also needs `--confirm-prod`. After an applied run it checks that doc counts match and every image resolved. The destination uses ADC (foundation login; keys are blocked). The legacy source needs its service-account key via `SOURCE_SA_PATH`, **so keep that key until the final prod copy (MCA-49)**.
 
 ---
 
@@ -344,7 +350,13 @@ Items with lipsum are awaiting real historical content — the structure is in p
 | `master` | prod | `prod` (`mcarthur-web-prod`) | https://wtmcarthurhomeplace.org (+ `www`) |
 | `master` | legacy | legacy backend (`mcarthur-tour`) | no traffic; decommissioned in MCA-59 |
 
-Code promotes **up** by PR: feature → `develop` → `uat` → `master`. Until MCA-59, a merge to `master` deploys to both prod and legacy.
+Code promotes **up** by PR: feature → `develop` → `uat` → `master` (the rule since 2026-09-27; details in `AGENTS.md` → Git and deploy):
+
+- Feature branches are cut from `develop` and PR'd into `develop`.
+- Promotions are their own PRs: `develop` → `uat`, then `uat` → `master`, each gated by CI.
+- Never PR a feature straight into `uat` or `master`, and never back-merge `master` into `develop`.
+
+Until MCA-59, a merge to `master` deploys to both prod and legacy.
 
 GitHub Actions runs **only as a CI gate**, on PRs into and pushes to `develop`, `uat`, and `master` (MCA-45). All work lands through PRs.
 
@@ -363,7 +375,7 @@ GitHub Actions runs **only as a CI gate**, on PRs into and pushes to `develop`, 
 - `apphosting.yaml` is shared by every backend: 1 CPU, 512 MB memory, 0–2 instances, 80 concurrent connections. **No env vars.** Keep it environment-neutral.
 - Each backend's **Environment** setting (backend → Settings → Environment) selects an override file, merged over the base by variable name:
   - `legacy` → `apphosting.legacy.yaml`: the live `mcarthur-tour` backend's project id, bucket, and Secret Manager references (deleted at decommission, MCA-59).
-  - `dev` / `uat` / `prod` → `apphosting.{dev,uat,prod}.yaml`: the `mcarthur-web-*` foundation backends. The emulator-safety flag, plus the donations feature flag (decision 8); Firebase config is injected by App Hosting and the Admin SDK is keyless (decision 4). The three files must stay identical apart from comments and `NEXT_PUBLIC_DONATIONS_ENABLED`, which must be `"false"` on prod.
+  - `dev` / `uat` / `prod` → `apphosting.{dev,uat,prod}.yaml`: the `mcarthur-web-*` foundation backends. The emulator-safety flag, plus the donations and design-tools feature flags (decisions 8 and 2); Firebase config is injected by App Hosting and the Admin SDK is keyless (decision 4). The three files must stay identical apart from comments and the per-env flags `NEXT_PUBLIC_DONATIONS_ENABLED` and `NEXT_PUBLIC_DESIGN_TOOLS_ENABLED`, both of which must be `"false"` on prod.
 - App Hosting rules learned the hard way (MCA-44): a secret referenced in the base file fails the build in any project without it, and an override **can't blank** a variable (`value: ""` is rejected). Guard tests: `src/test/apphostingLegacy.test.ts`, `src/test/apphostingFoundation.test.ts`.
 
 ### Config and Secrets
@@ -458,6 +470,7 @@ Never set these in a deployed environment; they would point the app at a non-exi
 | [src/lib/firebaseConfig.ts](src/lib/firebaseConfig.ts) | Config-source decisions for both SDKs and `next.config.ts` (MCA-44) |
 | [src/lib/cms/navigation.ts](src/lib/cms/navigation.ts) | Nav CRUD + hardcoded defaults |
 | [src/lib/features.ts](src/lib/features.ts) | Per-environment feature flags — `donationsEnabled()` (decision 8, MCA-71) |
+| [scripts/migrate-content.mjs](scripts/migrate-content.mjs) | Content copy between projects (`npm run migrate:content`); logic in `src/lib/migration/contentMigration.ts` (MCA-47) |
 | [src/lib/cms/pages.ts](src/lib/cms/pages.ts) | CMS page CRUD |
 | [src/lib/auth/server.ts](src/lib/auth/server.ts) | Session verification for server components |
 | [src/lib/photos.ts](src/lib/photos.ts) | Firestore photo queries |
