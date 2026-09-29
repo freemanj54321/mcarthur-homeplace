@@ -445,7 +445,7 @@ Tests ship in the **same PR** as the code they cover (see `AGENTS.md`). Co-locat
 | `npm run test:e2e` | Playwright against the Firebase Emulator Suite (seeds first) |
 | `npm run emulators` | Start auth/firestore/storage emulators standalone |
 
-- **Coverage gate** is a **ratchet floor** over `src/lib/**`, not a target. When a change raises real coverage, raise the floor just under the new actuals so it can't regress.
+- **Coverage gate** is a **ratchet floor** over `src/lib/**` plus the admin server actions and structured registry (the only write path), not a target. When a change raises real coverage, raise the floor just under the new actuals so it can't regress.
 - **Unit tests** run against in-memory Firestore / Admin SDK mocks in `src/test/` — no `.env.local` or network needed.
 - **E2E** runs against emulator project `demo-mcarthur` on ports 9099 (auth) / 8080 (firestore) / 9199 (storage). These ports are hardcoded in `firebase.json`, `playwright.config.ts`, and `src/lib/firebase.ts` — keep them in sync.
 - **Requires Java 21+** (`firebase-tools` dependency). Without it the emulators — and therefore `test:e2e` — will not start.
