@@ -3,8 +3,8 @@ import { Timestamp } from 'firebase-admin/firestore'
 
 vi.mock('@/lib/firebase-admin', () => import('@/test/firebaseAdminMock'))
 
+import type { PhotoInput } from '@/lib/content-schema'
 import {
-  PhotoAdminInput,
   listPhotos,
   getPhotoById,
   listPhotosByProject,
@@ -18,7 +18,7 @@ import { resetFirebaseAdminMock, getMockDb } from '@/test/firebaseAdminMock'
 
 const COL = 'photos'
 
-const input = (over: Partial<PhotoAdminInput> = {}): PhotoAdminInput => ({
+const input = (over: Partial<PhotoInput> = {}): PhotoInput => ({
   filename: 'porch.jpg',
   storagePath: 'photos/porch.jpg',
   downloadUrl: 'https://firebasestorage.googleapis.com/v0/b/x/o/photos%2Fporch.jpg',
@@ -35,17 +35,6 @@ const input = (over: Partial<PhotoAdminInput> = {}): PhotoAdminInput => ({
 const raw = async (id: string) => getMockDb().raw(COL, id)
 
 beforeEach(() => resetFirebaseAdminMock())
-
-describe('PhotoAdminInput', () => {
-  it('accepts a valid photo', () => {
-    expect(PhotoAdminInput.safeParse(input()).success).toBe(true)
-  })
-
-  it('rejects an unknown category and a non-URL downloadUrl', () => {
-    expect(PhotoAdminInput.safeParse(input({ category: 'selfie' as never })).success).toBe(false)
-    expect(PhotoAdminInput.safeParse(input({ downloadUrl: '/images/a.jpg' })).success).toBe(false)
-  })
-})
 
 describe('createPhoto', () => {
   it('appends after the highest existing order when order is negative', async () => {
