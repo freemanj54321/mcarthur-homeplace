@@ -45,6 +45,12 @@ describe('registry', () => {
     expect(getEntry('editors')).toBeNull()
   })
 
+  it('ignores inherited object keys (collection comes from the URL)', () => {
+    for (const key of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+      expect(getEntry(key)).toBeNull()
+    }
+  })
+
   it('revalidates the root layout for projects (they feed the nav dropdown)', () => {
     expect(getEntry('projects')?.layout).toBe(true)
   })
@@ -102,6 +108,15 @@ describe('publish / unpublish / delete / reorder', () => {
     expect(getMockDb().raw('partners', id)?.status).toBe('draft')
     expect(await deleteStructuredAction('partners', id)).toEqual({ ok: true })
     expect(getMockDb().raw('partners', id)).toBeUndefined()
+  })
+
+  it('stamps deletedBy before deleting (audit trail)', async () => {
+    const id = await createPartner('A')
+    const db = getMockDb()
+    const update = vi.spyOn(db.collection('partners').doc(id).constructor.prototype, 'update')
+    await deleteStructuredAction('partners', id)
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ deletedBy: 'editor-1' }))
+    update.mockRestore()
   })
 
   it('reorders within the collection', async () => {

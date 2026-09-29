@@ -14,7 +14,7 @@ export default async function EditStructuredItem({ params }: Props) {
   const meta = COLLECTIONS[collection]
   const entry = getEntry(collection)
   if (!meta || !entry) notFound()
-  const doc = await entry.store.getById(id)
+  const doc = await entry.getById(id)
   if (!doc) notFound()
   return <StructuredForm collection={collection} meta={meta} initial={doc as never} />
 }
