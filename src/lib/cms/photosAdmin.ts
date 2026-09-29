@@ -1,22 +1,7 @@
 import 'server-only'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
-import { z } from 'zod'
 import { adminDb } from '@/lib/firebase-admin'
-import type { PhotoCategory, PhotoRecord } from '@/lib/photos'
-
-export const PhotoAdminInput = z.object({
-  filename: z.string(),
-  storagePath: z.string().min(1),
-  downloadUrl: z.string().url(),
-  caption: z.string().max(400),
-  altText: z.string().max(400),
-  project: z.string().nullable(),
-  category: z.enum(['exterior', 'interior', 'detail', 'landscape', 'archival']),
-  featured: z.boolean(),
-  order: z.number().int(),
-  dateTaken: z.string(),
-})
-export type PhotoAdminInput = z.infer<typeof PhotoAdminInput>
+import type { PhotoCategory, PhotoInput, PhotoRecord } from '@/lib/content-schema'
 
 const col = () => adminDb().collection('photos')
 
@@ -87,16 +72,15 @@ export async function listFeaturedPhotos(): Promise<PhotoRecord[]> {
   }
 }
 
+// One-doc query rather than a full scan: the library holds hundreds of photos
+// since the legacy import (MCA-90) and grows with bulk upload (MCA-106).
 async function nextOrder(): Promise<number> {
-  const snap = await col().get()
-  const max = snap.docs.reduce((m, d) => {
-    const o = d.data().order
-    return typeof o === 'number' && o > m ? o : m
-  }, -1)
-  return max + 1
+  const snap = await col().orderBy('order', 'desc').limit(1).get()
+  const top = snap.docs[0]?.data().order
+  return typeof top === 'number' ? top + 1 : 0
 }
 
-export async function createPhoto(input: PhotoAdminInput, editorUid: string): Promise<string> {
+export async function createPhoto(input: PhotoInput, editorUid: string): Promise<string> {
   const order = input.order >= 0 ? input.order : await nextOrder()
   const ref = await col().add({
     ...input,
@@ -112,7 +96,7 @@ export async function createPhoto(input: PhotoAdminInput, editorUid: string): Pr
 
 export async function updatePhoto(
   id: string,
-  input: PhotoAdminInput,
+  input: PhotoInput,
   editorUid: string,
 ): Promise<void> {
   await col().doc(id).update({
@@ -123,8 +107,19 @@ export async function updatePhoto(
   })
 }
 
-export async function deletePhoto(id: string): Promise<void> {
-  await col().doc(id).delete()
+/**
+ * Delete a photo doc and return the Storage path it pointed at (null if the
+ * doc didn't exist or had none). The caller deletes the object from that path:
+ * it must come from the doc, never from the client, because the Admin SDK
+ * bypasses Storage rules and could otherwise delete any object (MCA-113).
+ */
+export async function deletePhoto(id: string): Promise<string | null> {
+  const ref = col().doc(id)
+  const snap = await ref.get()
+  if (!snap.exists) return null
+  const storagePath = snap.data()?.storagePath
+  await ref.delete()
+  return typeof storagePath === 'string' && storagePath ? storagePath : null
 }
 
 /** Swap `order` values between two photos (used by reorder ↑/↓). */

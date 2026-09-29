@@ -3,10 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { requireEditor } from '@/lib/auth/server'
 import { fmtError } from '@/lib/cms/action-error'
-import { getEntry } from './registry'
+import { getEntry, type SaveResult } from './registry'
 
 type Result = { ok: true } | { ok: false; error: string }
-type CreateResult = { ok: true; id: string } | { ok: false; error: string }
 
 function revalidateEntry(collection: string): void {
   const entry = getEntry(collection)
@@ -20,23 +19,14 @@ export async function saveStructuredAction(
   collection: string,
   id: string | null,
   input: unknown,
-): Promise<CreateResult> {
+): Promise<SaveResult> {
   const editor = await requireEditor()
   const entry = getEntry(collection)
   if (!entry) return { ok: false, error: `Unknown collection "${collection}"` }
-  const parsed = entry.schema.safeParse(input)
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') }
-  }
   try {
-    if (id) {
-      await entry.store.update(id, parsed.data, editor.uid)
-      revalidateEntry(collection)
-      return { ok: true, id }
-    }
-    const newId = await entry.store.create(parsed.data, editor.uid)
-    revalidateEntry(collection)
-    return { ok: true, id: newId }
+    const result = await entry.save(id, input, editor.uid)
+    if (result.ok) revalidateEntry(collection)
+    return result
   } catch (e) {
     return { ok: false, error: fmtError(e) }
   }
@@ -47,7 +37,7 @@ export async function publishStructuredAction(collection: string, id: string): P
   const entry = getEntry(collection)
   if (!entry) return { ok: false, error: `Unknown collection "${collection}"` }
   try {
-    await entry.store.publish(id, editor.uid)
+    await entry.publish(id, editor.uid)
     revalidateEntry(collection)
     return { ok: true }
   } catch (e) {
@@ -60,7 +50,7 @@ export async function unpublishStructuredAction(collection: string, id: string):
   const entry = getEntry(collection)
   if (!entry) return { ok: false, error: `Unknown collection "${collection}"` }
   try {
-    await entry.store.unpublish(id, editor.uid)
+    await entry.unpublish(id, editor.uid)
     revalidateEntry(collection)
     return { ok: true }
   } catch (e) {
@@ -70,11 +60,10 @@ export async function unpublishStructuredAction(collection: string, id: string):
 
 export async function deleteStructuredAction(collection: string, id: string): Promise<Result> {
   const editor = await requireEditor()
-  void editor
   const entry = getEntry(collection)
   if (!entry) return { ok: false, error: `Unknown collection "${collection}"` }
   try {
-    await entry.store.remove(id)
+    await entry.remove(id, editor.uid)
     revalidateEntry(collection)
     return { ok: true }
   } catch (e) {
@@ -91,7 +80,7 @@ export async function reorderStructuredAction(
   const entry = getEntry(collection)
   if (!entry) return { ok: false, error: `Unknown collection "${collection}"` }
   try {
-    await entry.store.reorder(id, direction, editor.uid)
+    await entry.reorder(id, direction, editor.uid)
     revalidateEntry(collection)
     return { ok: true }
   } catch (e) {

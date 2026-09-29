@@ -8,7 +8,7 @@ import type {
   NavItem,
   NavLink,
   PrimaryNavInput,
-} from '@/lib/cms/navigation'
+} from '@/lib/content-schema'
 import { savePrimaryNavAction, saveFooterNavAction } from './actions'
 
 function uid() {

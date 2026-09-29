@@ -14,6 +14,6 @@ export default async function StructuredListPage({ params }: Props) {
   const meta = COLLECTIONS[collection]
   const entry = getEntry(collection)
   if (!meta || !entry) notFound()
-  const items = await entry.store.list()
+  const items = await entry.list()
   return <StructuredList collection={collection} meta={meta} items={items as never} />
 }
