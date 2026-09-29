@@ -6,9 +6,9 @@ import { NavigationEditor } from './NavigationEditor'
 
 // WS2 (MCA-20) — DONE. Component-interaction coverage for add/remove/reorder
 // called for in the issue scope. Server actions and the Next router are
-// mocked so this runs under jsdom without the Admin SDK; the browser-level E2E
-// "edit navigation" test (persistence through a real save) is stubbed as
-// test.fixme in e2e/admin.spec.ts pending an emulator-backed editor sign-in.
+// mocked so this runs under jsdom without the Admin SDK. Persistence through a
+// real save is covered by the "edit navigation" flow in e2e/admin.spec.ts
+// (MCA-148).
 
 // The editor pulls in server actions (which import server-only firebase-admin)
 // and the Next router. Stub both so the component renders under jsdom.

@@ -67,6 +67,19 @@ export function resolveStorageBucket(env: Env): string | undefined {
   )
 }
 
+/**
+ * True only for E2E builds wired to the Emulator Suite. There, Storage download
+ * URLs are `http://127.0.0.1:9199/...`, which `next/image` refuses to optimize
+ * (not in `remotePatterns`, and Next 16 blocks local IPs by default). Serving
+ * images unoptimized in that mode avoids opening the optimizer to local IPs.
+ * The flag is never set in a deployed environment (ONBOARDING, emulator-only
+ * variables), and anything but exactly "true" is off, so deployed builds keep
+ * full optimization.
+ */
+export function usesEmulatorImages(env: Env): boolean {
+  return env.NEXT_PUBLIC_FIREBASE_USE_EMULATOR === 'true'
+}
+
 /** `next/image` remote pattern for this environment's Storage download URLs. */
 export function storageRemotePatterns(bucket: string | undefined) {
   // No bucket means no Firebase config at build time at all. Allowing no remote

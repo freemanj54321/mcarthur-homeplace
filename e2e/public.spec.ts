@@ -2,14 +2,8 @@ import { test, expect } from '@playwright/test'
 import { SEED } from './fixtures'
 
 /**
- * WS2 (MCA-20) — public-facing flows.
- *
- * DONE: the three active tests below (home renders, published page renders,
- * draft 404s) pass against a real emulator + Chromium run.
- *
- * TODO(MCA-20): tests marked `test.fixme` are scaffolded but not yet
- * implemented — their assertions depend on selectors/flows still to be
- * finalised in the next pass.
+ * Public-facing flows (MCA-20, finished in MCA-148). The E2E web server runs
+ * with donations on (playwright.config.ts), matching dev/uat.
  */
 
 test.describe('public site', () => {
@@ -32,34 +26,67 @@ test.describe('public site', () => {
     expect(response?.status()).toBe(404)
   })
 
-  // TODO(MCA-20): assert the "What to See" dropdown lists the seeded published
-  // project (dynamicChildren: 'projects'). Needs the header dropdown selectors.
-  test.fixme('What to See dropdown lists published projects', async ({ page }) => {
+  test('What to See dropdown lists published projects', async ({ page }) => {
     await page.goto('/')
-    const whatToSee = page.getByRole('link', { name: 'What to See' })
-    await whatToSee.hover()
-    await expect(page.getByRole('link', { name: SEED.publishedProject.title })).toBeVisible()
+    // Desktop header: the dropdown opens on hover (CSS :hover).
+    await page.getByRole('navigation', { name: 'Primary navigation, left' })
+      .getByRole('link', { name: /What to See/ }).hover()
+    const item = page.getByRole('menuitem', { name: SEED.publishedProject.title })
+    await expect(item).toBeVisible()
+    await item.click()
+    await expect(page).toHaveURL(new RegExp(`/what-to-see/${SEED.publishedProject.slug}$`))
   })
 
-  // TODO(MCA-20): assert a what-to-see/[slug] detail page renders.
-  test.fixme('what-to-see detail page renders', async ({ page }) => {
-    await page.goto(`/what-to-see/${SEED.publishedProject.slug}`)
-    await expect(page.getByRole('heading', { name: SEED.publishedProject.title })).toBeVisible()
+  test('what-to-see detail page renders', async ({ page }) => {
+    const response = await page.goto(`/what-to-see/${SEED.publishedProject.slug}`)
+    expect(response?.ok()).toBeTruthy()
+    await expect(page.getByRole('heading', { level: 1, name: SEED.publishedProject.title })).toBeVisible()
+  })
+
+  test('unknown place 404s', async ({ page }) => {
+    const response = await page.goto('/what-to-see/no-such-place')
+    expect(response?.status()).toBe(404)
   })
 })
 
-test.describe('donate form', () => {
-  // TODO(MCA-20): drive the multi-step DonateForm happy path (amount →
-  // designation → details → review → confirm) and assert the thank-you step.
-  // Step-machine/validation logic is also covered as a jsdom unit test in
-  // src/components/donate/DonateForm.test.tsx.
-  test.fixme('completes the donation happy path (no real payment)', async ({ page }) => {
+test.describe('donate form (prototype, no real payment)', () => {
+  test('completes the donation happy path', async ({ page }) => {
     await page.goto('/donate')
+    await expect(page.getByRole('heading', { name: /choose an amount/i })).toBeVisible()
+    await page.getByRole('button', { name: /continue/i }).click()
+
+    await expect(page.getByRole('heading', { name: /where should it go/i })).toBeVisible()
+    // Published projects are offered as designations; pick one.
+    await page.getByRole('radio', { name: new RegExp(SEED.publishedProject.title) }).check()
+    await page.getByRole('button', { name: /continue/i }).click()
+
+    await page.getByPlaceholder('Jane McArthur Hill').fill('Jane Donor')
+    await page.getByPlaceholder('jane@example.com').fill('jane@example.com')
+    await page.getByRole('button', { name: /review gift/i }).click()
+
+    await expect(page.getByRole('heading', { name: /review your gift/i })).toBeVisible()
+    await expect(page.getByRole('main').getByText(SEED.publishedProject.title).first()).toBeVisible()
+    await page.getByRole('button', { name: /confirm gift/i }).click()
+    await expect(page.getByText(/thank you/i).first()).toBeVisible()
   })
 
-  // TODO(MCA-20): assert Continue is disabled until a valid amount/details are
-  // entered (validation errors surface).
-  test.fixme('blocks progress on invalid input', async ({ page }) => {
+  test('blocks progress on invalid input', async ({ page }) => {
     await page.goto('/donate')
+    // A zero custom amount disables Continue.
+    await page.getByPlaceholder('0').fill('0')
+    await expect(page.getByRole('button', { name: /continue/i })).toBeDisabled()
+
+    await page.getByPlaceholder('0').fill('50')
+    await page.getByRole('button', { name: /continue/i }).click()
+    await page.getByRole('button', { name: /continue/i }).click()
+
+    // Review stays disabled until a name and a valid email are entered.
+    const review = page.getByRole('button', { name: /review gift/i })
+    await expect(review).toBeDisabled()
+    await page.getByPlaceholder('Jane McArthur Hill').fill('Jane')
+    await page.getByPlaceholder('jane@example.com').fill('not-an-email')
+    await expect(review).toBeDisabled()
+    await page.getByPlaceholder('jane@example.com').fill('jane@example.com')
+    await expect(review).toBeEnabled()
   })
 })
