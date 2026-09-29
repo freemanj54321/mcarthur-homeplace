@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BrandMark } from './BrandMark'
-import type { ResolvedPrimaryNav, ResolvedNavItem } from '@/lib/cms/navigation'
+import type { ResolvedPrimaryNav, ResolvedNavItem } from '@/lib/content-schema'
 
 type NavChild = { id: string; label: string; href: string; kind: 'internal' | 'external' }
 

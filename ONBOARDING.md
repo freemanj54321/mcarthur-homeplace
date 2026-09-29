@@ -105,9 +105,10 @@ src/
 │   │   ├── media.ts               # ContentImage + slug schema
 │   │   ├── sanitize.ts            # HTML sanitization for rich-text sections
 │   │   ├── structuredFields.ts    # Client-safe field specs driving the admin forms
+│   │   ├── navigation.ts          # Nav link / primary / footer schemas + Resolved* types
 │   │   └── collections/           # Per-collection Zod schemas + inferred types (incl. photos)
 │   └── cms/                       # Firebase-BOUND data access (server-only)
-│       ├── navigation.ts          # Nav config CRUD — Firestore `navigation` collection
+│       ├── navigation.ts          # Nav reads/writes, defaults, What to See resolver, donations filter
 │       ├── pages.ts               # Page CRUD — `pages` collection, built on collectionStore
 │       ├── collectionStore.ts     # Generic publish-model store factory (Admin SDK write path)
 │       ├── collectionReader.ts    # Transport-agnostic READ layer — no firebase-admin/Next imports (MCA-26)
@@ -154,7 +155,7 @@ Photos
 
 ### Navigation Architecture
 
-Navigation data lives in Firestore (`navigation/primary` and `navigation/footer`) with hardcoded defaults in `src/lib/cms/navigation.ts`. The `What to See` nav item uses `dynamicChildren: 'projects'` to auto-expand from the published `projects` Firestore collection at request time. Editors can modify nav structure, labels, hrefs, and add/remove items via `/admin/navigation`.
+Navigation data lives in Firestore (`navigation/primary` and `navigation/footer`) with hardcoded defaults in `src/lib/cms/navigation.ts`. Its shape (Zod schemas and the `Resolved*` types the Header/Footer render) is part of the content contract in `src/lib/content-schema/navigation.ts`. The `What to See` nav item uses `dynamicChildren: 'projects'` to auto-expand from the published `projects` Firestore collection at request time. Editors can modify nav structure, labels, hrefs, and add/remove items via `/admin/navigation`.
 
 ---
 
@@ -252,7 +253,7 @@ It's a `NEXT_PUBLIC_` variable because client components read it, and App Hostin
 | `primary` | `{ utility[], left[], right[], updatedBy, updatedAt }` — primary header nav |
 | `footer` | `{ tagline, columns[], bottomLinks[], updatedBy, updatedAt }` — footer nav |
 
-See `ResolvedPrimaryNav` / `ResolvedFooterNav` types in [src/lib/cms/navigation.ts](src/lib/cms/navigation.ts).
+See `ResolvedPrimaryNav` / `ResolvedFooterNav` types in [src/lib/content-schema/navigation.ts](src/lib/content-schema/navigation.ts).
 
 ### `pages` collection
 
