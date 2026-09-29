@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { BrandMark } from './BrandMark'
-import type { ResolvedFooterNav } from '@/lib/cms/navigation'
+import type { ResolvedFooterNav } from '@/lib/content-schema'
 
 function externalProps(kind: 'internal' | 'external') {
   return kind === 'external' ? { target: '_blank', rel: 'noopener noreferrer' } : {}

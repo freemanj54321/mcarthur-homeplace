@@ -2,12 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { requireEditor } from '@/lib/auth/server'
-import {
-  FooterNavInput,
-  PrimaryNavInput,
-  saveFooterNav,
-  savePrimaryNav,
-} from '@/lib/cms/navigation'
+import { FooterNavInput, PrimaryNavInput } from '@/lib/content-schema'
+import { saveFooterNav, savePrimaryNav } from '@/lib/cms/navigation'
 import { fmtError } from '@/lib/cms/action-error'
 
 type Result = { ok: true } | { ok: false; error: string }

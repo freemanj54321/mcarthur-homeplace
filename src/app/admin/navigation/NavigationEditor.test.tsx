@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { FooterNavInput, PrimaryNavInput } from '@/lib/cms/navigation'
+import type { FooterNavInput, PrimaryNavInput } from '@/lib/content-schema'
 import { NavigationEditor } from './NavigationEditor'
 
 // WS2 (MCA-20) — DONE. Component-interaction coverage for add/remove/reorder
