@@ -1,22 +1,7 @@
 import 'server-only'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
-import { z } from 'zod'
 import { adminDb } from '@/lib/firebase-admin'
-import type { PhotoCategory, PhotoRecord } from '@/lib/photos'
-
-export const PhotoAdminInput = z.object({
-  filename: z.string(),
-  storagePath: z.string().min(1),
-  downloadUrl: z.string().url(),
-  caption: z.string().max(400),
-  altText: z.string().max(400),
-  project: z.string().nullable(),
-  category: z.enum(['exterior', 'interior', 'detail', 'landscape', 'archival']),
-  featured: z.boolean(),
-  order: z.number().int(),
-  dateTaken: z.string(),
-})
-export type PhotoAdminInput = z.infer<typeof PhotoAdminInput>
+import type { PhotoCategory, PhotoInput, PhotoRecord } from '@/lib/content-schema'
 
 const col = () => adminDb().collection('photos')
 
@@ -95,7 +80,7 @@ async function nextOrder(): Promise<number> {
   return typeof top === 'number' ? top + 1 : 0
 }
 
-export async function createPhoto(input: PhotoAdminInput, editorUid: string): Promise<string> {
+export async function createPhoto(input: PhotoInput, editorUid: string): Promise<string> {
   const order = input.order >= 0 ? input.order : await nextOrder()
   const ref = await col().add({
     ...input,
@@ -111,7 +96,7 @@ export async function createPhoto(input: PhotoAdminInput, editorUid: string): Pr
 
 export async function updatePhoto(
   id: string,
-  input: PhotoAdminInput,
+  input: PhotoInput,
   editorUid: string,
 ): Promise<void> {
   await col().doc(id).update({

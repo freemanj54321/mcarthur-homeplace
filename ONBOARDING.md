@@ -94,7 +94,6 @@ src/
 │   ├── features.ts                # Per-environment feature flags (donations, decision 8)
 │   ├── migration/
 │   │   └── contentMigration.ts    # Pure content-copy logic (collect → copy images → rewrite URLs → reconcile), MCA-47
-│   ├── photos.ts                  # Firestore photo queries (client SDK)
 │   ├── auth/
 │   │   ├── server.ts              # Session verification (server components / actions)
 │   │   └── client.ts              # Firebase Auth helpers (sign in, sign out)
@@ -106,14 +105,15 @@ src/
 │   │   ├── media.ts               # ContentImage + slug schema
 │   │   ├── sanitize.ts            # HTML sanitization for rich-text sections
 │   │   ├── structuredFields.ts    # Client-safe field specs driving the admin forms
-│   │   └── collections/           # Per-collection Zod schemas + inferred types
+│   │   ├── navigation.ts          # Nav link / primary / footer schemas + Resolved* types
+│   │   └── collections/           # Per-collection Zod schemas + inferred types (incl. photos)
 │   └── cms/                       # Firebase-BOUND data access (server-only)
-│       ├── navigation.ts          # Nav config CRUD — Firestore `navigation` collection
+│       ├── navigation.ts          # Nav reads/writes, defaults, What to See resolver, donations filter
 │       ├── pages.ts               # Page CRUD — `pages` collection, built on collectionStore
 │       ├── collectionStore.ts     # Generic publish-model store factory (Admin SDK write path)
 │       ├── collectionReader.ts    # Transport-agnostic READ layer — no firebase-admin/Next imports (MCA-26)
 │       ├── firestoreReader.ts     # Minimal Firestore read-port types the reader is driven through
-│       ├── photosAdmin.ts         # Photo metadata CRUD (Admin SDK)
+│       ├── photosAdmin.ts         # Photo CRUD + public gallery queries (Admin SDK)
 │       ├── action-error.ts        # Error formatting for server actions
 │       └── projects.ts / news.ts / events.ts / milestones.ts / board.ts / partners.ts
 │                                  # Store INSTANCES only — schemas live in content-schema/
@@ -147,13 +147,15 @@ CMS Pages (admin-created)
 
 Photos
     └── Firestore `photos` collection
-        ├── lib/photos.ts (client SDK) → getProjectPhotos(slug), getFeaturedPhotos()
-        └── lib/cms/photosAdmin.ts (Admin SDK) → /admin/photos editor
+        └── lib/cms/photosAdmin.ts (Admin SDK)
+            ├── listPhotosByProject(slug) / listFeaturedPhotos() → public galleries
+            └── listPhotos() / getPhotoById() → /admin/photos editor
+        Schema + PhotoRecord type: content-schema/collections/photos.ts
 ```
 
 ### Navigation Architecture
 
-Navigation data lives in Firestore (`navigation/primary` and `navigation/footer`) with hardcoded defaults in `src/lib/cms/navigation.ts`. The `What to See` nav item uses `dynamicChildren: 'projects'` to auto-expand from the published `projects` Firestore collection at request time. Editors can modify nav structure, labels, hrefs, and add/remove items via `/admin/navigation`.
+Navigation data lives in Firestore (`navigation/primary` and `navigation/footer`) with hardcoded defaults in `src/lib/cms/navigation.ts`. Its shape (Zod schemas and the `Resolved*` types the Header/Footer render) is part of the content contract in `src/lib/content-schema/navigation.ts`. The `What to See` nav item uses `dynamicChildren: 'projects'` to auto-expand from the published `projects` Firestore collection at request time. Editors can modify nav structure, labels, hrefs, and add/remove items via `/admin/navigation`.
 
 ---
 
@@ -251,7 +253,7 @@ It's a `NEXT_PUBLIC_` variable because client components read it, and App Hostin
 | `primary` | `{ utility[], left[], right[], updatedBy, updatedAt }` — primary header nav |
 | `footer` | `{ tagline, columns[], bottomLinks[], updatedBy, updatedAt }` — footer nav |
 
-See `ResolvedPrimaryNav` / `ResolvedFooterNav` types in [src/lib/cms/navigation.ts](src/lib/cms/navigation.ts).
+See `ResolvedPrimaryNav` / `ResolvedFooterNav` types in [src/lib/content-schema/navigation.ts](src/lib/content-schema/navigation.ts).
 
 ### `pages` collection
 
@@ -443,7 +445,7 @@ Tests ship in the **same PR** as the code they cover (see `AGENTS.md`). Co-locat
 | `npm run test:e2e` | Playwright against the Firebase Emulator Suite (seeds first) |
 | `npm run emulators` | Start auth/firestore/storage emulators standalone |
 
-- **Coverage gate** is a **ratchet floor** over `src/lib/**`, not a target. When a change raises real coverage, raise the floor just under the new actuals so it can't regress.
+- **Coverage gate** is a **ratchet floor** over `src/lib/**` plus the admin server actions and structured registry (the only write path), not a target. When a change raises real coverage, raise the floor just under the new actuals so it can't regress.
 - **Unit tests** run against in-memory Firestore / Admin SDK mocks in `src/test/` — no `.env.local` or network needed.
 - **E2E** runs against emulator project `demo-mcarthur` on ports 9099 (auth) / 8080 (firestore) / 9199 (storage). These ports are hardcoded in `firebase.json`, `playwright.config.ts`, and `src/lib/firebase.ts` — keep them in sync.
 - **Requires Java 21+** (`firebase-tools` dependency). Without it the emulators — and therefore `test:e2e` — will not start.
@@ -474,7 +476,7 @@ Never set these in a deployed environment; they would point the app at a non-exi
 | [scripts/migrate-content.mjs](scripts/migrate-content.mjs) | Content copy between projects (`npm run migrate:content`); logic in `src/lib/migration/contentMigration.ts` (MCA-47) |
 | [src/lib/cms/pages.ts](src/lib/cms/pages.ts) | CMS page CRUD |
 | [src/lib/auth/server.ts](src/lib/auth/server.ts) | Session verification for server components |
-| [src/lib/photos.ts](src/lib/photos.ts) | Firestore photo queries |
+| [src/lib/cms/photosAdmin.ts](src/lib/cms/photosAdmin.ts) | Photo library CRUD and gallery queries |
 | [src/test/](src/test/) | Vitest harness — in-memory Firestore + `firebase-admin` mock |
 | [e2e/](e2e/) | Playwright specs (emulator-backed) |
 | [firestore.indexes.json](firestore.indexes.json) | Composite index declarations — deploy to every environment |

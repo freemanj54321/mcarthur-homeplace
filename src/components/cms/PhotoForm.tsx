@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { ImageUploader } from '@/components/cms/ImageUploader'
-import { PHOTO_CATEGORIES, type PhotoCategory, type PhotoRecord } from '@/lib/photos'
+import { PHOTO_CATEGORIES, type PhotoCategory, type PhotoRecord } from '@/lib/content-schema'
 import { savePhotoAction } from '@/app/admin/photos/actions'
 
 type ImageState = { storagePath: string; downloadUrl: string } | null

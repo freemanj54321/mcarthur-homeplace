@@ -1,57 +1,19 @@
 import 'server-only'
 import { FieldValue } from 'firebase-admin/firestore'
-import { z } from 'zod'
 import { adminDb } from '@/lib/firebase-admin'
 import { projectsStore } from '@/lib/cms/projects'
 import { donationsEnabled, isDonateHref } from '@/lib/features'
+import {
+  PrimaryNavInput,
+  FooterNavInput,
+  type NavLink,
+  type NavItem,
+  type ResolvedNavItem,
+  type ResolvedPrimaryNav,
+  type ResolvedFooterNav,
+} from '@/lib/content-schema'
 
 const COL = 'navigation'
-
-export const NavLink = z.object({
-  id: z.string(),
-  label: z.string().min(1).max(80),
-  href: z.string().min(1).max(500),
-  kind: z.enum(['internal', 'external']),
-})
-export type NavLink = z.infer<typeof NavLink>
-
-export const NavItem = NavLink.extend({
-  children: z.array(NavLink).optional(),
-  dynamicChildren: z.literal('projects').optional(),
-})
-export type NavItem = z.infer<typeof NavItem>
-
-export const PrimaryNavInput = z.object({
-  utility: z.array(NavLink),
-  left: z.array(NavItem),
-  right: z.array(NavItem),
-})
-export type PrimaryNavInput = z.infer<typeof PrimaryNavInput>
-
-export const FooterColumn = z.object({
-  id: z.string(),
-  heading: z.string().min(1).max(80),
-  links: z.array(NavLink),
-})
-export type FooterColumn = z.infer<typeof FooterColumn>
-
-export const FooterNavInput = z.object({
-  tagline: z.string().max(280),
-  columns: z.array(FooterColumn),
-  bottomLinks: z.array(NavLink),
-})
-export type FooterNavInput = z.infer<typeof FooterNavInput>
-
-// Resolved variants (with dynamicChildren expanded). These are what the
-// public Header/Footer components consume.
-export type ResolvedNavLink = NavLink
-export type ResolvedNavItem = NavLink & { children?: NavLink[] }
-export type ResolvedPrimaryNav = {
-  utility: ResolvedNavLink[]
-  left: ResolvedNavItem[]
-  right: ResolvedNavItem[]
-}
-export type ResolvedFooterNav = FooterNavInput
 
 const DEFAULT_PRIMARY: PrimaryNavInput = {
   utility: [
@@ -99,22 +61,12 @@ const DEFAULT_FOOTER: FooterNavInput = {
   ],
 }
 
+/** Drop the `dynamicChildren` marker, expanding it into real children. */
 function resolveDynamicChildren(item: NavItem, projectLinks: NavLink[]): ResolvedNavItem {
-  if (!item.dynamicChildren) {
-    const { dynamicChildren: _, ...rest } = item
-    return rest
-  }
-  if (item.dynamicChildren === 'projects') {
-    const fixed = item.children ?? []
-    return {
-      id: item.id,
-      label: item.label,
-      href: item.href,
-      kind: item.kind,
-      children: [...fixed, ...projectLinks],
-    }
-  }
-  return item
+  const { id, label, href, kind } = item
+  const children =
+    item.dynamicChildren === 'projects' ? [...(item.children ?? []), ...projectLinks] : item.children
+  return children ? { id, label, href, kind, children } : { id, label, href, kind }
 }
 
 // MCA-71: with donations off (prod), drop every link into the donation flow,
@@ -140,23 +92,14 @@ async function getProjectNavLinks(): Promise<NavLink[]> {
       kind: 'internal' as const,
     }))
   } catch {
-    // Service account unavailable (e.g. local dev without env). Empty dropdown.
+    // Credentials unavailable (e.g. local dev without env): empty dropdown.
+    // TODO(MCA-32): log instead of swallowing.
     return []
   }
 }
 
 export async function getPrimaryNav(): Promise<ResolvedPrimaryNav> {
-  let raw: PrimaryNavInput = DEFAULT_PRIMARY
-  try {
-    const snap = await adminDb().collection(COL).doc('primary').get()
-    if (snap.exists) {
-      const parsed = PrimaryNavInput.safeParse(snap.data())
-      if (parsed.success) raw = parsed.data
-    }
-  } catch {
-    // Service account unavailable (e.g. local dev without env). Use defaults.
-  }
-  const projectLinks = await getProjectNavLinks()
+  const [raw, projectLinks] = await Promise.all([getPrimaryNavRaw(), getProjectNavLinks()])
   const resolve = (items: NavItem[]) =>
     items.filter(keepLink).map((item) => filterItem(resolveDynamicChildren(item, projectLinks)))
   return {
@@ -166,6 +109,7 @@ export async function getPrimaryNav(): Promise<ResolvedPrimaryNav> {
   }
 }
 
+/** Saved primary nav as editors see it: unfiltered, so saving never drops links (MCA-71). */
 export async function getPrimaryNavRaw(): Promise<PrimaryNavInput> {
   try {
     const snap = await adminDb().collection(COL).doc('primary').get()
@@ -174,7 +118,8 @@ export async function getPrimaryNavRaw(): Promise<PrimaryNavInput> {
       if (parsed.success) return parsed.data
     }
   } catch {
-    // fall through
+    // Credentials unavailable (e.g. local dev without env): use defaults.
+    // TODO(MCA-32): log instead of swallowing.
   }
   return DEFAULT_PRIMARY
 }
@@ -188,7 +133,7 @@ export async function getFooterNavRaw(): Promise<FooterNavInput> {
       if (parsed.success) return parsed.data
     }
   } catch {
-    // fall through
+    // Credentials unavailable: use defaults. TODO(MCA-32): log instead of swallowing.
   }
   return DEFAULT_FOOTER
 }

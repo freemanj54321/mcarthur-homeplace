@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Project } from '@/lib/content-schema'
-import { type PhotoRecord } from '@/lib/photos'
+import { type PhotoRecord } from '@/lib/content-schema'
 import { Placeholder } from '@/components/ui/Placeholder'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { ProjectCard } from '@/components/ui/ProjectCard'
