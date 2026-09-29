@@ -5,6 +5,7 @@ import {
   parseFirebaseConfigEnv,
   resolveStorageBucket,
   storageRemotePatterns,
+  usesEmulatorImages,
 } from './firebaseConfig'
 
 const webappConfig = JSON.stringify({
@@ -85,6 +86,18 @@ describe('storageRemotePatterns', () => {
 
   it('allows no remote images when there is no bucket', () => {
     expect(storageRemotePatterns(undefined)).toEqual([])
+  })
+})
+
+describe('usesEmulatorImages', () => {
+  it('is on only when the emulator flag is exactly "true"', () => {
+    expect(usesEmulatorImages({ NEXT_PUBLIC_FIREBASE_USE_EMULATOR: 'true' })).toBe(true)
+  })
+
+  it('is off for deployed-style envs: unset, "false" or anything else', () => {
+    expect(usesEmulatorImages({})).toBe(false)
+    expect(usesEmulatorImages({ NEXT_PUBLIC_FIREBASE_USE_EMULATOR: 'false' })).toBe(false)
+    expect(usesEmulatorImages({ NEXT_PUBLIC_FIREBASE_USE_EMULATOR: 'TRUE' })).toBe(false)
   })
 })
 

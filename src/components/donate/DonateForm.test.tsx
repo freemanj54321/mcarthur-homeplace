@@ -4,11 +4,9 @@ import userEvent from '@testing-library/user-event'
 import { DonateForm } from './DonateForm'
 
 // WS2 (MCA-20) — DONE. Component-interaction coverage for the DonateForm step
-// machine called for in the issue scope (full E2E for this flow is overkill;
-// the multi-step amount → designation → details → review → confirm path and
-// its validation gates are covered here under jsdom). The browser-level E2E
-// happy-path test is stubbed as test.fixme in e2e/public.spec.ts pending real
-// payment-free assertions against the rendered page.
+// machine: the amount → designation → details → review → confirm path and its
+// validation gates, under jsdom. The same happy path and gates also run in a
+// real browser in e2e/public.spec.ts (MCA-148).
 
 const projects = [
   { slug: 'main-house', title: 'The Main House' },
