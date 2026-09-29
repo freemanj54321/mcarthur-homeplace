@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest'
 //
 // WHY this test exists: a missing composite index fails *silently* here. Both
 // photo queries wrap their `get()` in `try { … } catch { return [] }`
-// (src/lib/photos.ts, src/lib/cms/photosAdmin.ts), so an un-indexed query
+// (src/lib/cms/photosAdmin.ts), so an un-indexed query
 // returns an empty list rather than throwing — galleries render blank and a
 // "page loaded without error" smoke test still passes. Deleting an index would
 // therefore be invisible in CI and in prod. This test makes it loud.
@@ -29,7 +29,7 @@ const config: IndexConfig = JSON.parse(readFileSync(indexesPath, 'utf8'))
 /** Composite indexes Firestore *requires*, each tied to the query that needs it. */
 const REQUIRED = [
   {
-    why: "photos.ts getProjectPhotos / photosAdmin.ts listPhotosByProject — where('project','==') + orderBy('order')",
+    why: "photosAdmin.ts listPhotosByProject — where('project','==') + orderBy('order')",
     collectionGroup: 'photos',
     fields: [
       { fieldPath: 'project', order: 'ASCENDING' },
@@ -37,7 +37,7 @@ const REQUIRED = [
     ],
   },
   {
-    why: "photos.ts getFeaturedPhotos / photosAdmin.ts listFeaturedPhotos — where('featured','==') + orderBy('order')",
+    why: "photosAdmin.ts listFeaturedPhotos — where('featured','==') + orderBy('order')",
     collectionGroup: 'photos',
     fields: [
       { fieldPath: 'featured', order: 'ASCENDING' },

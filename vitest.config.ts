@@ -50,10 +50,13 @@ export default defineConfig({
       // Raised 2026-09-29 by MCA-113 (first photosAdmin.ts tests).
       // Actuals then: 87.4 lines / 90 functions / 87.12 statements /
       // 83.89 branches.
+      // Raised 2026-09-29 by MCA-111 (dead src/lib/photos.ts removed, photo
+      // schema moved into content-schema). Actuals then: 89.35 lines /
+      // 92.64 functions / 89.05 statements / 83.89 branches.
       thresholds: {
-        lines: 86,
-        functions: 89,
-        statements: 86,
+        lines: 88,
+        functions: 91,
+        statements: 88,
         branches: 82,
       },
     },

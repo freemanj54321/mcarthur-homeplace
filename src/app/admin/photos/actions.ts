@@ -4,13 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { requireEditor } from '@/lib/auth/server'
 import { fmtError } from '@/lib/cms/action-error'
 import { adminStorage } from '@/lib/firebase-admin'
-import {
-  PhotoAdminInput,
-  createPhoto,
-  updatePhoto,
-  deletePhoto,
-  swapPhotoOrder,
-} from '@/lib/cms/photosAdmin'
+import { PhotoInput } from '@/lib/content-schema'
+import { createPhoto, updatePhoto, deletePhoto, swapPhotoOrder } from '@/lib/cms/photosAdmin'
 
 type Result = { ok: true } | { ok: false; error: string }
 type CreateResult = { ok: true; id: string } | { ok: false; error: string }
@@ -26,7 +21,7 @@ export async function savePhotoAction(
   input: unknown,
 ): Promise<CreateResult> {
   const editor = await requireEditor()
-  const parsed = PhotoAdminInput.safeParse(input)
+  const parsed = PhotoInput.safeParse(input)
   if (!parsed.success) {
     return {
       ok: false,

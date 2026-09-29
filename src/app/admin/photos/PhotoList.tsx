@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { PHOTO_CATEGORIES, type PhotoRecord } from '@/lib/photos'
+import { PHOTO_CATEGORIES, type PhotoRecord } from '@/lib/content-schema'
 import { deletePhotoAction, reorderPhotoAction } from './actions'
 
 export function PhotoList({ initialPhotos }: { initialPhotos: PhotoRecord[] }) {

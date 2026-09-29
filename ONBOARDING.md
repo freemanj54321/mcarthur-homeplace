@@ -2,7 +2,7 @@
 
 > **Canonical copy lives in Notion** ([Project Overview](https://www.notion.so/37066661a975815e994acfb3e3d2d276), under Documentation). This file is a synced local mirror, imported into agent context via `@ONBOARDING.md` in `CLAUDE.md`. When the overview changes, update **both** this file and the Notion page.
 
-> Last Updated: 2026-09-28
+> Last Updated: 2026-09-29
 
 ---
 
@@ -93,7 +93,6 @@ src/
 │   ├── features.ts                # Per-environment feature flags (donations, decision 8)
 │   ├── migration/
 │   │   └── contentMigration.ts    # Pure content-copy logic (collect → copy images → rewrite URLs → reconcile), MCA-47
-│   ├── photos.ts                  # Firestore photo queries (client SDK)
 │   ├── auth/
 │   │   ├── server.ts              # Session verification (server components / actions)
 │   │   └── client.ts              # Firebase Auth helpers (sign in, sign out)
@@ -105,14 +104,14 @@ src/
 │   │   ├── media.ts               # ContentImage + slug schema
 │   │   ├── sanitize.ts            # HTML sanitization for rich-text sections
 │   │   ├── structuredFields.ts    # Client-safe field specs driving the admin forms
-│   │   └── collections/           # Per-collection Zod schemas + inferred types
+│   │   └── collections/           # Per-collection Zod schemas + inferred types (incl. photos)
 │   └── cms/                       # Firebase-BOUND data access (server-only)
 │       ├── navigation.ts          # Nav config CRUD — Firestore `navigation` collection
 │       ├── pages.ts               # Page CRUD — `pages` collection, built on collectionStore
 │       ├── collectionStore.ts     # Generic publish-model store factory (Admin SDK write path)
 │       ├── collectionReader.ts    # Transport-agnostic READ layer — no firebase-admin/Next imports (MCA-26)
 │       ├── firestoreReader.ts     # Minimal Firestore read-port types the reader is driven through
-│       ├── photosAdmin.ts         # Photo metadata CRUD (Admin SDK)
+│       ├── photosAdmin.ts         # Photo CRUD + public gallery queries (Admin SDK)
 │       ├── action-error.ts        # Error formatting for server actions
 │       └── projects.ts / news.ts / events.ts / milestones.ts / board.ts / partners.ts
 │                                  # Store INSTANCES only — schemas live in content-schema/
@@ -146,8 +145,10 @@ CMS Pages (admin-created)
 
 Photos
     └── Firestore `photos` collection
-        ├── lib/photos.ts (client SDK) → getProjectPhotos(slug), getFeaturedPhotos()
-        └── lib/cms/photosAdmin.ts (Admin SDK) → /admin/photos editor
+        └── lib/cms/photosAdmin.ts (Admin SDK)
+            ├── listPhotosByProject(slug) / listFeaturedPhotos() → public galleries
+            └── listPhotos() / getPhotoById() → /admin/photos editor
+        Schema + PhotoRecord type: content-schema/collections/photos.ts
 ```
 
 ### Navigation Architecture
@@ -473,7 +474,7 @@ Never set these in a deployed environment; they would point the app at a non-exi
 | [scripts/migrate-content.mjs](scripts/migrate-content.mjs) | Content copy between projects (`npm run migrate:content`); logic in `src/lib/migration/contentMigration.ts` (MCA-47) |
 | [src/lib/cms/pages.ts](src/lib/cms/pages.ts) | CMS page CRUD |
 | [src/lib/auth/server.ts](src/lib/auth/server.ts) | Session verification for server components |
-| [src/lib/photos.ts](src/lib/photos.ts) | Firestore photo queries |
+| [src/lib/cms/photosAdmin.ts](src/lib/cms/photosAdmin.ts) | Photo library CRUD and gallery queries |
 | [src/test/](src/test/) | Vitest harness — in-memory Firestore + `firebase-admin` mock |
 | [e2e/](e2e/) | Playwright specs (emulator-backed) |
 | [firestore.indexes.json](firestore.indexes.json) | Composite index declarations — deploy to every environment |
