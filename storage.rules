@@ -23,10 +23,13 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
-    // Existing photos collection assets.
+    // Photo library uploads (/admin/photos). Same limits as pages/content; they
+    // were missing here, so any file type or size was accepted (MCA-113).
     match /photos/{allPaths=**} {
       allow read: if true;
-      allow write: if isEditor();
+      allow write: if isEditor()
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
     }
 
     match /{allPaths=**} {

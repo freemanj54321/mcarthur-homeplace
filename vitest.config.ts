@@ -47,11 +47,14 @@ export default defineConfig({
       // Raised 2026-09-28 by MCA-90 (unreferenced photo import + tests).
       // Actuals then: 79.16 lines / 77.85 functions / 79.2 statements /
       // 74.57 branches.
+      // Raised 2026-09-29 by MCA-113 (first photosAdmin.ts tests).
+      // Actuals then: 87.4 lines / 90 functions / 87.12 statements /
+      // 83.89 branches.
       thresholds: {
-        lines: 79,
-        functions: 77,
-        statements: 79,
-        branches: 74,
+        lines: 86,
+        functions: 89,
+        statements: 86,
+        branches: 82,
       },
     },
     projects: [

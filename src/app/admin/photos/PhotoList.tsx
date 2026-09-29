@@ -155,7 +155,7 @@ export function PhotoList({ initialPhotos }: { initialPhotos: PhotoRecord[] }) {
                         onClick={() => {
                           const label = photo.caption || photo.filename || 'this photo'
                           if (confirm(`Delete "${label}"? The image file will also be permanently deleted.`)) {
-                            run(() => deletePhotoAction(photo.id, photo.storagePath))
+                            run(() => deletePhotoAction(photo.id))
                           }
                         }}
                       >

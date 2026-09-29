@@ -2,7 +2,7 @@
 //
 // Implements the subset of the firebase-admin Firestore surface the codebase
 // actually uses: collection().get()/add()/doc()/where(), doc().get()/set()/
-// update()/delete(), chainable where()/orderBy(), and batch().update()/commit().
+// update()/delete(), chainable where()/orderBy()/limit(), and batch().update()/commit().
 // Only the '==' filter operator is supported (the only one used). This is the
 // shared backbone for WS1 store/action tests — extend it here rather than
 // reinventing per test. See WS0 (MCA-18).
@@ -74,15 +74,20 @@ class FakeQuery {
     protected readonly store: Store,
     protected readonly filters: Filter[] = [],
     protected readonly order: { field: string; dir: 'asc' | 'desc' } | null = null,
+    protected readonly max: number | null = null,
   ) {}
 
   where(field: string, op: string, value: unknown): FakeQuery {
     if (op !== '==') throw new Error(`FakeFirestore only supports '==' (got '${op}')`)
-    return new FakeQuery(this.store, [...this.filters, { field, value }], this.order)
+    return new FakeQuery(this.store, [...this.filters, { field, value }], this.order, this.max)
   }
 
   orderBy(field: string, dir: 'asc' | 'desc' = 'asc'): FakeQuery {
-    return new FakeQuery(this.store, this.filters, { field, dir })
+    return new FakeQuery(this.store, this.filters, { field, dir }, this.max)
+  }
+
+  limit(n: number): FakeQuery {
+    return new FakeQuery(this.store, this.filters, this.order, n)
   }
 
   async get(): Promise<{ docs: FakeDocSnapshot[]; size: number; empty: boolean }> {
@@ -98,6 +103,7 @@ class FakeQuery {
         return dir === 'asc' ? cmp : -cmp
       })
     }
+    if (this.max !== null) entries = entries.slice(0, this.max)
     const docs = entries.map(([id, data]) => new FakeDocSnapshot(id, { ...data }))
     return { docs, size: docs.length, empty: docs.length === 0 }
   }

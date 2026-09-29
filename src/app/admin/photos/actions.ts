@@ -47,17 +47,17 @@ export async function savePhotoAction(
   }
 }
 
-export async function deletePhotoAction(
-  id: string,
-  storagePath: string,
-): Promise<Result> {
+export async function deletePhotoAction(id: string): Promise<Result> {
   await requireEditor()
   try {
-    await deletePhoto(id)
-    try {
-      await adminStorage().bucket().file(storagePath).delete()
-    } catch {
-      // Storage object may already be absent — don't fail the whole action
+    // The path comes from the doc, not the caller (MCA-113).
+    const storagePath = await deletePhoto(id)
+    if (storagePath) {
+      try {
+        await adminStorage().bucket().file(storagePath).delete()
+      } catch {
+        // Storage object may already be absent — don't fail the whole action
+      }
     }
     revalidateAll()
     return { ok: true }
@@ -70,7 +70,8 @@ export async function reorderPhotoAction(idA: string, idB: string): Promise<Resu
   const editor = await requireEditor()
   try {
     await swapPhotoOrder(idA, idB, editor.uid)
-    revalidatePath('/admin/photos')
+    // Public galleries show this order too, not just the admin list.
+    revalidateAll()
     return { ok: true }
   } catch (e) {
     return { ok: false, error: fmtError(e) }
