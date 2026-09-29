@@ -27,7 +27,13 @@ export default defineConfig({
       // Vitest 4 reports all files matching `include` by default (uncovered
       // files count toward the denominator), so the gate reflects the whole
       // lib surface, not just imported files.
-      include: ['src/lib/**/*.ts'],
+      // The admin server actions + structured registry are the only write
+      // path, so they're gated too (MCA-115).
+      include: [
+        'src/lib/**/*.ts',
+        'src/app/admin/**/actions.ts',
+        'src/app/admin/structured/registry.ts',
+      ],
       exclude: ['src/lib/firebase.ts', 'src/lib/firebase-admin.ts', '**/*.d.ts'],
       // RATCHET FLOOR — NOT the target. New/changed code ships with its own
       // tests (see AGENTS.md), so these floors sit just under current actuals
@@ -55,11 +61,14 @@ export default defineConfig({
       // 92.64 functions / 89.05 statements / 83.89 branches.
       // Raised 2026-09-29 by MCA-112 (navigation schema tests). Actuals then:
       // 89.54 lines / 92.64 functions / 89.19 statements / 84.57 branches.
+      // Raised 2026-09-29 by MCA-115 (admin server actions + registry added to
+      // the gate, with tests). Actuals then: 90.61 lines / 94.93 functions /
+      // 90.4 statements / 85.45 branches.
       thresholds: {
-        lines: 88,
-        functions: 91,
-        statements: 88,
-        branches: 83,
+        lines: 89,
+        functions: 93,
+        statements: 89,
+        branches: 84,
       },
     },
     projects: [
