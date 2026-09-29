@@ -2,7 +2,7 @@
 
 > **Canonical copy lives in Notion** ([Project Overview](https://www.notion.so/37066661a975815e994acfb3e3d2d276), under Documentation). This file is a synced local mirror, imported into agent context via `@ONBOARDING.md` in `CLAUDE.md`. When the overview changes, update **both** this file and the Notion page.
 
-> Last Updated: 2026-09-28
+> Last Updated: 2026-09-29
 
 ---
 
@@ -57,9 +57,10 @@ src/
 │   ├── what-to-see/               # Property listings (was "projects")
 │   │   ├── page.tsx
 │   │   └── [slug]/page.tsx
-│   ├── stories/page.tsx
 │   ├── visit/page.tsx
-│   ├── donate/page.tsx
+│   ├── donate/page.tsx            # 404 unless donations are enabled (decision 8)
+│   ├── [...slug]/page.tsx         # Published CMS pages by slug (e.g. /stories)
+│   ├── api/auth/session/          # Mint / clear the __session cookie
 │   └── admin/                     # Auth-gated CMS dashboard
 │       ├── layout.tsx             # Requires active session; redirects to /admin/login
 │       ├── page.tsx               # Dashboard home
