@@ -123,6 +123,27 @@ export function resolveSiteUrl(env: Env): string {
   return SITE_URLS[resolveProjectId(env) ?? ''] ?? 'http://localhost:3000'
 }
 
+/**
+ * `next.config.ts` redirects: www → apex, permanently, so search engines see
+ * one canonical host (MCA-130; both hosts serve the site, MCA-70).
+ *
+ * WHY here and not inline in next.config.ts: the App Hosting adapter replaces
+ * next.config.ts during its build with a wrapper that has no default export,
+ * so a test importing next.config fails `next build`'s type check there (while
+ * passing locally and in CI). Tests import this instead; see
+ * src/test/nextConfigImports.test.ts.
+ */
+export function canonicalHostRedirects() {
+  return [
+    {
+      source: '/:path*',
+      has: [{ type: 'host' as const, value: 'www.wtmcarthurhomeplace.org' }],
+      destination: 'https://wtmcarthurhomeplace.org/:path*',
+      permanent: true,
+    },
+  ]
+}
+
 /** Only prod should be indexed by search engines. */
 export function isProductionSite(env: Env): boolean {
   return resolveProjectId(env) === 'mcarthur-web-prod'
