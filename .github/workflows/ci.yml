@@ -105,6 +105,11 @@ jobs:
           key: ${{ runner.os }}-firebase-emulators-${{ hashFiles('**/package-lock.json') }}
           restore-keys: ${{ runner.os }}-firebase-emulators-
 
+      # Executes firestore.rules + storage.rules on the emulators (MCA-149).
+      # Same job as E2E: it already has Java and the emulator binaries.
+      - name: Security rules
+        run: npm run test:rules
+
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 

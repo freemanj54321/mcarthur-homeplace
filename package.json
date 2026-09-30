@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:rules": "firebase emulators:exec --project demo-mcarthur --only firestore,storage \"vitest run --config vitest.rules.config.ts\"",
     "test:e2e": "firebase emulators:exec --project demo-mcarthur --only auth,firestore,storage \"node scripts/seed-emulator.mjs && playwright test\"",
     "test:e2e:ui": "firebase emulators:exec --project demo-mcarthur --only auth,firestore,storage \"node scripts/seed-emulator.mjs && playwright test --ui\"",
     "migrate:content": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/migrate-content.mjs",
@@ -34,6 +35,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@playwright/test": "^1.61.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

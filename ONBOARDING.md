@@ -435,6 +435,7 @@ Tests ship in the **same PR** as the code they cover (see `AGENTS.md`). Co-locat
 |---|---|
 | `npm test` | Full Vitest suite (node + jsdom) |
 | `npm run test:coverage` | Vitest + coverage; enforces the gate in `vitest.config.ts` |
+| `npm run test:rules` | Executes `firestore.rules` + `storage.rules` on the emulators (`rules-tests/`, MCA-149) |
 | `npm run test:e2e` | Playwright against the Firebase Emulator Suite (seeds first) |
 | `npm run emulators` | Start auth/firestore/storage emulators standalone |
 
