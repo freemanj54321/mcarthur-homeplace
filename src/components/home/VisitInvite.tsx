@@ -8,7 +8,7 @@ export function VisitInvite({ events }: { events: EventItem[] }) {
       <div className="container">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 64 }}>
           <div>
-            <div className="eyebrow" style={{ color: 'var(--tartan-gold)' }}>Come see for yourself</div>
+            <div className="eyebrow" style={{ color: 'var(--tartan-gold-on-dark)' }}>Come see for yourself</div>
             <h2 className="h-section" style={{ color: 'var(--tartan-cream)', marginTop: 18 }}>
               The porch is <em style={{ color: 'var(--tartan-gold)' }}>open.</em>
             </h2>

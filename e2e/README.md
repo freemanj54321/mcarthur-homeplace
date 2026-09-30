@@ -31,6 +31,7 @@ To poke at the emulators manually: `npm run emulators`.
 | `../playwright.config.ts` | Playwright config + `next dev` webServer (port 3100) |
 | `../scripts/seed-emulator.mjs` | Seeds the editor (with a linked Google identity), a published and a draft page, a published project and two milestones; clears photos and navigation |
 | `fixtures.ts` | Fixture identifiers shared with the seed script |
+| `a11y.spec.ts` | axe-core scans of key public pages + admin login; serious/critical WCAG 2.1 AA violations fail (MCA-150) |
 | `auth.ts` | `signInAsEditor()`: signs in through the real "Continue with Google" button and the Auth emulator's account chooser |
 | `public.spec.ts` | Public flows (home, published/draft pages, nav, donate) |
 | `admin.spec.ts` | Admin flows (auth gate + `?next=`, sign-in, create/edit/publish a page, photo upload shown on its place page, nav edit, structured reorder) |

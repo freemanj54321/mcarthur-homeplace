@@ -9,9 +9,11 @@ type Props = {
   value: string
   onChange: (html: string) => void
   placeholder?: string
+  /** Accessible name for the editable area (it isn't a native form control). */
+  label?: string
 }
 
-export function RichTextField({ value, onChange }: Props) {
+export function RichTextField({ value, onChange, label = 'Rich text' }: Props) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
@@ -22,7 +24,7 @@ export function RichTextField({ value, onChange }: Props) {
       onChange(editor.getHTML())
     },
     editorProps: {
-      attributes: { class: 'ProseMirror' },
+      attributes: { class: 'ProseMirror', role: 'textbox', 'aria-multiline': 'true', 'aria-label': label },
     },
     immediatelyRender: false,
   })
