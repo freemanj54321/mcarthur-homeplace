@@ -1,0 +1,32 @@
+# Automated dependency updates (MCA-35).
+#
+# PRs target `develop`, never `master`: every change goes feature → develop →
+# uat → master (AGENTS.md). CI gates each PR like any other; merging is manual.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # One PR for all minor/patch bumps keeps the weekly noise low.
+      minor-and-patch:
+        update-types: [minor, patch]
+    labels: [dependencies]
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: [dependencies]
+    commit-message:
+      prefix: "chore(ci)"
