@@ -67,11 +67,14 @@ export default defineConfig({
       // Raised 2026-09-30 by MCA-29 (seed-editor argument checks + tests).
       // Actuals then: 90.63 lines / 94.11 functions / 90.47 statements /
       // 86.19 branches.
+      // Raised 2026-09-30 by MCA-114 (first tests for lib/auth: server, client,
+      // session route). Actuals then: 95.94 lines / 98.24 functions /
+      // 95.52 statements / 89.42 branches.
       thresholds: {
-        lines: 89,
-        functions: 93,
-        statements: 89,
-        branches: 85,
+        lines: 94,
+        functions: 97,
+        statements: 94,
+        branches: 88,
       },
     },
     projects: [
