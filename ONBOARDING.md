@@ -2,7 +2,7 @@
 
 > **Canonical copy lives in Notion** ([Project Overview](https://www.notion.so/37066661a975815e994acfb3e3d2d276), under Documentation). This file is a synced local mirror, imported into agent context via `@ONBOARDING.md` in `CLAUDE.md`. When the overview changes, update **both** this file and the Notion page.
 
-> Last Updated: 2026-09-29
+> Last Updated: 2026-09-30
 
 ---
 
@@ -396,9 +396,10 @@ GitHub Actions runs **only as a CI gate**, on PRs into and pushes to `develop`, 
 ## Local Development Setup
 
 ```bash
-# 1. Clone and install
+# 1. Clone and install (Node 24: `.nvmrc` + package.json `engines`, MCA-64)
 git clone <repo-url> && cd mcarthur-homeplace
-npm install
+nvm use        # or any Node 24.x
+npm ci
 
 # 2. Enable auto-updating git hook
 git config core.hooksPath .githooks
