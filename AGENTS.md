@@ -19,6 +19,8 @@ If `node_modules/` is missing, run `npm install` first. The docs mirror nextjs.o
 | Type check | `npx tsc --noEmit` | |
 | Unit tests + coverage gate | `npm run test:coverage` | Mocked Firestore; no `.env.local` needed |
 | E2E | `npm run test:e2e` | Firebase emulators (needs Java 21+) + Playwright |
+| Security rules | `npm run test:rules` | Firestore + Storage rules on the emulators; CI runs it in the E2E job |
+| Contract snapshot | `npm run contract:snapshot` | Only after bumping `CONTENT_SCHEMA_VERSION`; a test fails on unversioned schema changes |
 | Build | `npm run build` | Needs the `NEXT_PUBLIC_FIREBASE_*` env vars |
 
 # Definition of done

@@ -38,6 +38,8 @@ Editors sign in at `/admin` with a Google account on the editor allowlist.
 | Type check | `npx tsc --noEmit` |
 | Unit tests + coverage gate | `npm run test:coverage` |
 | E2E (Firebase emulators, needs Java 21+) | `npm run test:e2e` |
+| Security rules on the emulators (needs Java 21+) | `npm run test:rules` |
+| Update the content-contract snapshot (after bumping `CONTENT_SCHEMA_VERSION`) | `npm run contract:snapshot` |
 | Build | `npm run build` |
 
 CI (`.github/workflows/ci.yml`) runs all of these on pull requests into `develop`, `uat` and `master`.
