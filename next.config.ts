@@ -1,5 +1,10 @@
 import type { NextConfig } from 'next'
-import { resolveStorageBucket, storageRemotePatterns, usesEmulatorImages } from './src/lib/firebaseConfig'
+import {
+  canonicalHostRedirects,
+  resolveStorageBucket,
+  storageRemotePatterns,
+  usesEmulatorImages,
+} from './src/lib/firebaseConfig'
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['firebase-admin', '@google-cloud/firestore'],
@@ -10,14 +15,7 @@ const nextConfig: NextConfig = {
   // MCA-130: one canonical host. www and the apex both serve the site
   // (MCA-70); send www to the apex so search engines see a single URL.
   async redirects() {
-    return [
-      {
-        source: '/:path*',
-        has: [{ type: 'host', value: 'www.wtmcarthurhomeplace.org' }],
-        destination: 'https://wtmcarthurhomeplace.org/:path*',
-        permanent: true,
-      },
-    ]
+    return canonicalHostRedirects()
   },
   images: {
     // MCA-44: this environment's own bucket, resolved at build time from
