@@ -1,10 +1,23 @@
 import 'server-only'
+import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { adminAuth, adminDb } from '@/lib/firebase-admin'
 
 const COOKIE = '__session'
 const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000
+/**
+ * A session cookie may only be minted from a fresh sign-in (Firebase's
+ * session-cookie guidance), so a leaked older ID token can't be upgraded into
+ * a 5-day cookie (MCA-114).
+ */
+export const MAX_SIGN_IN_AGE_SECONDS = 5 * 60
+
+/** True when the ID token's `auth_time` (seconds) is within the allowed age. */
+export function isRecentSignIn(authTimeSeconds: number | undefined, nowMs = Date.now()): boolean {
+  if (typeof authTimeSeconds !== 'number') return false
+  return nowMs / 1000 - authTimeSeconds <= MAX_SIGN_IN_AGE_SECONDS
+}
 
 export type Editor = {
   uid: string
@@ -40,7 +53,12 @@ export async function clearSession(): Promise<void> {
   }
 }
 
-export async function getCurrentEditor(): Promise<Editor | null> {
+/**
+ * The signed-in editor, or null. Wrapped in React `cache()` so the admin layout
+ * and the page's requireEditor() share one check per request, instead of two
+ * revocation lookups plus two Firestore reads (MCA-114).
+ */
+export const getCurrentEditor = cache(async (): Promise<Editor | null> => {
   const jar = await cookies()
   const cookie = jar.get(COOKIE)?.value
   if (!cookie) return null
@@ -56,7 +74,7 @@ export async function getCurrentEditor(): Promise<Editor | null> {
   } catch {
     return null
   }
-}
+})
 
 export async function requireEditor(): Promise<Editor> {
   const editor = await getCurrentEditor()

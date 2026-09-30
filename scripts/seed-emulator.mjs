@@ -7,10 +7,10 @@
  *   - a draft page (must 404 publicly)
  *   - a published project (drives the "What to See" dynamic nav dropdown)
  *
- * Status: DONE for the currently-active specs. TODO(MCA-20): extend this seed
- * when filling in the test.fixme flows in e2e/admin.spec.ts — e.g. a
- * Storage-emulator object for the photo-upload test, and a custom-claim or
- * session-cookie helper so the seeded editor can actually sign in.
+ *   - two published milestones (the structured-reorder test swaps them)
+ *
+ * Status: DONE (MCA-148). Photos and navigation are cleared, not seeded: the
+ * upload and nav-edit tests create their own and every run starts clean.
  *
  * Intended to run inside `firebase emulators:exec`, which sets
  * FIRESTORE_EMULATOR_HOST / FIREBASE_AUTH_EMULATOR_HOST so the Admin SDK talks
@@ -57,6 +57,18 @@ async function seedEditor() {
       displayName: EDITOR.displayName,
     })
   }
+  // Link a Google identity so the Auth emulator's sign-in popup lists this
+  // account: E2E signs in through the real "Continue with Google" button
+  // (signInWithPopup), which also signs in the client SDK that Storage uploads
+  // need. Idempotent: linking the same provider uid again is a no-op.
+  await auth.updateUser(EDITOR.uid, {
+    providerToLink: {
+      providerId: 'google.com',
+      uid: `google-${EDITOR.uid}`,
+      email: EDITOR.email,
+      displayName: EDITOR.displayName,
+    },
+  })
   await db.collection('editors').doc(EDITOR.uid).set({
     email: EDITOR.email,
     displayName: EDITOR.displayName,
@@ -121,12 +133,24 @@ async function seedPage({ slug, title, hero, sections, status }) {
 }
 
 // ── Projects (drives the "What to See" dynamic nav dropdown) ──────────────────
+// Every ProjectInput field is present: the public reader validates published
+// docs against the schema, so a partial doc would 404 on its detail page.
 const PUBLISHED_PROJECT = {
   slug: 'e2e-project',
   title: 'E2E Project',
   subtitle: 'A published project for the What-to-See dropdown.',
+  kind: 'Outbuilding',
+  built: 'c. 1900',
+  architect: '',
+  style: '',
+  materials: '',
+  footprint: '',
+  placeholder: 'E2E Project',
   excerpt: 'Seeded by the E2E harness.',
   description: 'Seeded by the E2E harness.',
+  features: [],
+  cardImage: null,
+  heroImages: [],
   order: 0,
   status: 'published',
 }
@@ -145,21 +169,45 @@ async function seedProject(project) {
   })
 }
 
+// ── Milestones (the structured-reorder test swaps these two) ─────────────────
+const MILESTONES = [
+  { year: '1893', title: 'E2E Milestone First', body: 'Seeded by the E2E harness.' },
+  { year: '1900', title: 'E2E Milestone Second', body: 'Seeded by the E2E harness.' },
+]
+
+async function seedMilestones() {
+  await Promise.all(
+    MILESTONES.map((m, order) =>
+      db.collection('milestones').add({
+        ...m,
+        order,
+        status: 'published',
+        publishedSnapshot: { ...m },
+        publishedAt: now(),
+        createdBy: 'seed-emulator',
+        createdAt: now(),
+        updatedBy: 'seed-emulator',
+        updatedAt: now(),
+      }),
+    ),
+  )
+}
+
 // ── Run ───────────────────────────────────────────────────────────────────────
-await Promise.all([
-  clearCollection('pages'),
-  clearCollection('projects'),
-  clearCollection('editors'),
-])
+await Promise.all(
+  ['pages', 'projects', 'editors', 'milestones', 'photos', 'navigation'].map(clearCollection),
+)
 
 await seedEditor()
 await seedPage(PUBLISHED_PAGE)
 await seedPage(DRAFT_PAGE)
 await seedProject(PUBLISHED_PROJECT)
+await seedMilestones()
 
 console.log('Emulator seed complete:')
 console.log(`  editor:           ${EDITOR.email} (${EDITOR.uid})`)
 console.log(`  published page:   /${PUBLISHED_PAGE.slug}`)
 console.log(`  draft page:       /${DRAFT_PAGE.slug} (should 404)`)
 console.log(`  published project: ${PUBLISHED_PROJECT.title} (${PUBLISHED_PROJECT.slug})`)
+console.log(`  milestones:       ${MILESTONES.map((m) => m.title).join(', ')}`)
 process.exit(0)

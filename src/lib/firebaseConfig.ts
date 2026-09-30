@@ -67,6 +67,19 @@ export function resolveStorageBucket(env: Env): string | undefined {
   )
 }
 
+/**
+ * True only for E2E builds wired to the Emulator Suite. There, Storage download
+ * URLs are `http://127.0.0.1:9199/...`, which `next/image` refuses to optimize
+ * (not in `remotePatterns`, and Next 16 blocks local IPs by default). Serving
+ * images unoptimized in that mode avoids opening the optimizer to local IPs.
+ * The flag is never set in a deployed environment (ONBOARDING, emulator-only
+ * variables), and anything but exactly "true" is off, so deployed builds keep
+ * full optimization.
+ */
+export function usesEmulatorImages(env: Env): boolean {
+  return env.NEXT_PUBLIC_FIREBASE_USE_EMULATOR === 'true'
+}
+
 /** `next/image` remote pattern for this environment's Storage download URLs. */
 export function storageRemotePatterns(bucket: string | undefined) {
   // No bucket means no Firebase config at build time at all. Allowing no remote
@@ -79,6 +92,40 @@ export function storageRemotePatterns(bucket: string | undefined) {
       pathname: `/v0/b/${bucket}/**`,
     },
   ]
+}
+
+/** This environment's Firebase project id: explicit config, then injected. */
+export function resolveProjectId(env: Env): string | undefined {
+  return (
+    env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    parseFirebaseConfigEnv(env.FIREBASE_WEBAPP_CONFIG)?.projectId ||
+    parseFirebaseConfigEnv(env.FIREBASE_CONFIG)?.projectId ||
+    undefined
+  )
+}
+
+/** Public origin of each foundation environment (MCA-52 / MCA-70). */
+export const SITE_URLS: Record<string, string> = {
+  'mcarthur-web-prod': 'https://wtmcarthurhomeplace.org',
+  'mcarthur-web-uat': 'https://uat.wtmcarthurhomeplace.org',
+  'mcarthur-web-dev': 'https://dev.wtmcarthurhomeplace.org',
+}
+
+/**
+ * Absolute origin for sitemap, robots and metadata URLs (MCA-130). Derived from
+ * the project id App Hosting already injects, so no per-env variable is needed;
+ * NEXT_PUBLIC_SITE_URL overrides it (e.g. a preview host). Prod is the apex,
+ * the canonical host (www redirects there, see next.config.ts).
+ */
+export function resolveSiteUrl(env: Env): string {
+  const explicit = env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, '')
+  if (explicit) return explicit
+  return SITE_URLS[resolveProjectId(env) ?? ''] ?? 'http://localhost:3000'
+}
+
+/** Only prod should be indexed by search engines. */
+export function isProductionSite(env: Env): boolean {
+  return resolveProjectId(env) === 'mcarthur-web-prod'
 }
 
 export type AdminInitMode = 'emulator' | 'serviceAccount' | 'appHosting' | 'applicationDefault'

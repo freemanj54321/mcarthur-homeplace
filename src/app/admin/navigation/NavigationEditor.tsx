@@ -295,8 +295,9 @@ export function NavigationEditor({
       <h2 className="admin-h2">Footer — link columns</h2>
       {footerNav.columns.map((col) => (
         <div key={col.id} className="admin-card">
-          <label className="admin-label">Column heading</label>
+          <label className="admin-label" htmlFor={`${col.id}-heading`}>Column heading</label>
           <input
+            id={`${col.id}-heading`}
             className="admin-input"
             value={col.heading}
             onChange={(e) => updateColumn(col.id, { heading: e.target.value })}

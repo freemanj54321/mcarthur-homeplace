@@ -1,6 +1,7 @@
 import 'server-only'
 import { FieldValue } from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase-admin'
+import { logFallback } from '@/lib/log'
 import { projectsStore } from '@/lib/cms/projects'
 import { donationsEnabled, isDonateHref } from '@/lib/features'
 import {
@@ -91,9 +92,9 @@ async function getProjectNavLinks(): Promise<NavLink[]> {
       href: `/what-to-see/${p.slug}`,
       kind: 'internal' as const,
     }))
-  } catch {
-    // Credentials unavailable (e.g. local dev without env): empty dropdown.
-    // TODO(MCA-32): log instead of swallowing.
+  } catch (err) {
+    // e.g. local dev without credentials: empty dropdown, logged.
+    logFallback('navigation.projectLinks', err)
     return []
   }
 }
@@ -117,9 +118,9 @@ export async function getPrimaryNavRaw(): Promise<PrimaryNavInput> {
       const parsed = PrimaryNavInput.safeParse(snap.data())
       if (parsed.success) return parsed.data
     }
-  } catch {
-    // Credentials unavailable (e.g. local dev without env): use defaults.
-    // TODO(MCA-32): log instead of swallowing.
+  } catch (err) {
+    // e.g. local dev without credentials: defaults, logged.
+    logFallback('navigation.primary', err)
   }
   return DEFAULT_PRIMARY
 }
@@ -132,8 +133,8 @@ export async function getFooterNavRaw(): Promise<FooterNavInput> {
       const parsed = FooterNavInput.safeParse(snap.data())
       if (parsed.success) return parsed.data
     }
-  } catch {
-    // Credentials unavailable: use defaults. TODO(MCA-32): log instead of swallowing.
+  } catch (err) {
+    logFallback('navigation.footer', err)
   }
   return DEFAULT_FOOTER
 }

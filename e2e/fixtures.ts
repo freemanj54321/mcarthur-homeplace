@@ -2,9 +2,7 @@
  * Fixture identifiers shared between the emulator seed (scripts/seed-emulator.mjs)
  * and the E2E specs. Keep these in sync with the seed script.
  *
- * Status: DONE for the active specs. TODO(MCA-20): add fixtures here as the
- * test.fixme flows are filled in (e.g. a second editor without allowlist
- * access for a negative-auth case, a draft project, a photo doc).
+ * Status: DONE (MCA-148). Add fixtures here as new flows need them.
  */
 export const SEED = {
   editor: {
@@ -15,4 +13,6 @@ export const SEED = {
   publishedPage: { slug: 'e2e-published', title: 'E2E Published Page' },
   draftPage: { slug: 'e2e-draft', title: 'E2E Draft Page' },
   publishedProject: { slug: 'e2e-project', title: 'E2E Project' },
+  /** Seeded in this order; the reorder test swaps them. */
+  milestones: ['E2E Milestone First', 'E2E Milestone Second'],
 } as const

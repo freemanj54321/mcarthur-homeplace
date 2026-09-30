@@ -1,6 +1,7 @@
 import 'server-only'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase-admin'
+import { logFallback } from '@/lib/log'
 import type { PhotoCategory, PhotoInput, PhotoRecord } from '@/lib/content-schema'
 
 const col = () => adminDb().collection('photos')
@@ -39,7 +40,8 @@ export async function listPhotos(): Promise<PhotoRecord[]> {
   try {
     const snap = await col().orderBy('order', 'asc').get()
     return snap.docs.map((d) => toRecord(d.id, d.data()))
-  } catch {
+  } catch (err) {
+    logFallback('photos.list', err)
     return []
   }
 }
@@ -49,7 +51,8 @@ export async function getPhotoById(id: string): Promise<PhotoRecord | null> {
     const snap = await col().doc(id).get()
     if (!snap.exists) return null
     return toRecord(snap.id, snap.data() ?? {})
-  } catch {
+  } catch (err) {
+    logFallback('photos.getById', err, { id })
     return null
   }
 }
@@ -58,7 +61,9 @@ export async function listPhotosByProject(slug: string): Promise<PhotoRecord[]> 
   try {
     const snap = await col().where('project', '==', slug).orderBy('order', 'asc').get()
     return snap.docs.map((d) => toRecord(d.id, d.data()))
-  } catch {
+  } catch (err) {
+    // A missing composite index lands here (ONBOARDING decision 7).
+    logFallback('photos.listByProject', err, { slug })
     return []
   }
 }
@@ -67,7 +72,8 @@ export async function listFeaturedPhotos(): Promise<PhotoRecord[]> {
   try {
     const snap = await col().where('featured', '==', true).orderBy('order', 'asc').get()
     return snap.docs.map((d) => toRecord(d.id, d.data()))
-  } catch {
+  } catch (err) {
+    logFallback('photos.listFeatured', err)
     return []
   }
 }

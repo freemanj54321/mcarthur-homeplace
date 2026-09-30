@@ -2,7 +2,7 @@
 
 > **Canonical copy lives in Notion** ([Project Overview](https://www.notion.so/37066661a975815e994acfb3e3d2d276), under Documentation). This file is a synced local mirror, imported into agent context via `@ONBOARDING.md` in `CLAUDE.md`. When the overview changes, update **both** this file and the Notion page.
 
-> Last Updated: 2026-09-29
+> Last Updated: 2026-09-30
 
 ---
 
@@ -60,6 +60,8 @@ src/
 │   ├── visit/page.tsx
 │   ├── donate/page.tsx            # 404 unless donations are enabled (decision 8)
 │   ├── [...slug]/page.tsx         # Published CMS pages by slug (e.g. /stories)
+│   ├── not-found.tsx / error.tsx  # Branded 404 and error pages (MCA-130)
+│   ├── sitemap.ts / robots.ts     # From published content; only prod is indexable (MCA-130)
 │   ├── api/auth/session/          # Mint / clear the __session cookie
 │   └── admin/                     # Auth-gated CMS dashboard
 │       ├── layout.tsx             # Requires active session; redirects to /admin/login
@@ -120,8 +122,8 @@ src/
 └── test/                          # Vitest harness: in-memory Firestore + firebase-admin mock
 
 e2e/                               # Playwright specs (run against the Firebase Emulator Suite)
-scripts/                           # seed-editor / seed-pages / seed-structured / seed-emulator; migrate-content (MCA-47)
-middleware.ts                      # /admin session redirect — Next 16 deprecates `middleware` in favor of `proxy`
+scripts/                           # seed-editor (keyless, `npm run seed:editor`), seed-emulator (E2E), migrate-content (MCA-47)
+src/proxy.ts                       # /admin login redirect keeping ?next= (Next 16 `proxy`, MCA-61)
 firestore.indexes.json             # Composite index declarations (deployed per environment)
 playwright.config.ts               # E2E config — emulator-backed, project `demo-mcarthur`
 ```
@@ -228,11 +230,11 @@ The `What to See` nav item expands its dropdown from the published `projects` Fi
 
 `src/lib/content-schema/` holds every Zod schema, inferred type, and the `StoredDoc`/`PublicDoc` envelope, with **zero Firebase / Next.js / React imports** — only `zod` and `isomorphic-dompurify`. `src/lib/cms/` keeps the Firebase-bound data access on top of it.
 
-This split is deliberate: it is the single source of truth for content shape, so a planned content API and a future mobile app can consume the same contract without pulling in Firebase. `CONTENT_SCHEMA_VERSION` exists so the contract can be versioned independently of the site.
+This split is deliberate: it is the single source of truth for content shape, so a planned content API and a future mobile app can consume the same contract without pulling in Firebase. `CONTENT_SCHEMA_VERSION` exists so the contract can be versioned independently of the site, and it's enforced: `contract.snapshot.json` holds every schema's JSON Schema, and a test fails when the shapes change until the version is bumped (major for breaking, minor for additive) and `npm run contract:snapshot` is run (MCA-136).
 
 ### 7. Composite indexes are declared in the repo
 
-`firestore.indexes.json` declares the composite indexes the photo queries require (`project + order`, `featured + order`). They must be deployed to every environment. **A missing index fails silently** — the photo queries catch errors and return `[]`, so galleries render blank while the page still loads fine. `src/test/firestoreIndexes.test.ts` guards against accidental removal.
+`firestore.indexes.json` declares the composite indexes the photo queries require (`project + order`, `featured + order`). They must be deployed to every environment. **A missing index doesn't break the page** — the photo queries catch errors and return `[]`, so galleries render blank while the page still loads. Since MCA-32 each fallback writes a structured `WARNING` log (`src/lib/log.ts`, scope e.g. `photos.listByProject`), so it shows up in Cloud Logging instead of passing silently. `src/test/firestoreIndexes.test.ts` guards against accidental removal.
 
 ### 8. Donations are feature-flagged per environment (MCA-71)
 
@@ -396,35 +398,28 @@ GitHub Actions runs **only as a CI gate**, on PRs into and pushes to `develop`, 
 ## Local Development Setup
 
 ```bash
-# 1. Clone and install
+# 1. Clone and install (Node 24: `.nvmrc` + package.json `engines`, MCA-64)
 git clone <repo-url> && cd mcarthur-homeplace
-npm install
+nvm use        # or any Node 24.x
+npm ci
 
 # 2. Enable auto-updating git hook
 git config core.hooksPath .githooks
 
-# 3. Create .env.local
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=mcarthur-tour
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=mcarthur-tour.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-NEXT_PUBLIC_FIREBASE_APP_ID=...
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=...
+# 3. Create .env.local from the template (every variable is explained there)
+cp .env.example .env.local
 
-# Optional: show the prototype donation flow (off unless "true"; decision 8):
-NEXT_PUBLIC_DONATIONS_ENABLED=true
+# 4. Server-side access without a key file (the foundation org blocks keys)
+gcloud auth application-default login
+gcloud auth application-default set-quota-project mcarthur-web-dev
 
-# Required for admin CMS (navigation, pages, auth verification):
-FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"mcarthur-tour",...}
-
-# 4. Run dev server
+# 5. Run dev server
 npm run dev
 ```
 
 > **Admin dashboard:** Visit `/admin` — sign in with a Google account that has been granted editor access in Firebase Auth.
 
-> **Without `FIREBASE_SERVICE_ACCOUNT_JSON`** (and without `gcloud auth application-default login`): the admin dashboard will throw. The public site will still work, but navigation will use hardcoded defaults from `src/lib/cms/navigation.ts`.
+> **Without credentials** (no `gcloud auth application-default login`, and no `FIREBASE_SERVICE_ACCOUNT_JSON`, which only the legacy `mcarthur-tour` project uses): the admin dashboard will throw. The public site will still work, but navigation will use hardcoded defaults from `src/lib/cms/navigation.ts`.
 
 > **Next.js 16:** Has breaking changes from prior versions. Read `node_modules/next/dist/docs/` before writing App Router code.
 
@@ -442,6 +437,7 @@ Tests ship in the **same PR** as the code they cover (see `AGENTS.md`). Co-locat
 |---|---|
 | `npm test` | Full Vitest suite (node + jsdom) |
 | `npm run test:coverage` | Vitest + coverage; enforces the gate in `vitest.config.ts` |
+| `npm run test:rules` | Executes `firestore.rules` + `storage.rules` on the emulators (`rules-tests/`, MCA-149) |
 | `npm run test:e2e` | Playwright against the Firebase Emulator Suite (seeds first) |
 | `npm run emulators` | Start auth/firestore/storage emulators standalone |
 

@@ -74,6 +74,9 @@ function DesktopNavItem({
       <div
         className={`nav-dropdown${open ? ' open' : ''}`}
         role="menu"
+        // Focusable from script only (not in the tab order); items get focus
+        // via the ArrowDown handler on the parent link.
+        tabIndex={-1}
         onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false) }}
       >
         {item.children.map((c) => (

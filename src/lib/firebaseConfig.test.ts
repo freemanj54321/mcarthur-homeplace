@@ -5,6 +5,10 @@ import {
   parseFirebaseConfigEnv,
   resolveStorageBucket,
   storageRemotePatterns,
+  usesEmulatorImages,
+  resolveProjectId,
+  resolveSiteUrl,
+  isProductionSite,
 } from './firebaseConfig'
 
 const webappConfig = JSON.stringify({
@@ -88,6 +92,18 @@ describe('storageRemotePatterns', () => {
   })
 })
 
+describe('usesEmulatorImages', () => {
+  it('is on only when the emulator flag is exactly "true"', () => {
+    expect(usesEmulatorImages({ NEXT_PUBLIC_FIREBASE_USE_EMULATOR: 'true' })).toBe(true)
+  })
+
+  it('is off for deployed-style envs: unset, "false" or anything else', () => {
+    expect(usesEmulatorImages({})).toBe(false)
+    expect(usesEmulatorImages({ NEXT_PUBLIC_FIREBASE_USE_EMULATOR: 'false' })).toBe(false)
+    expect(usesEmulatorImages({ NEXT_PUBLIC_FIREBASE_USE_EMULATOR: 'TRUE' })).toBe(false)
+  })
+})
+
 describe('adminInitMode', () => {
   it('uses the emulator whenever FIRESTORE_EMULATOR_HOST is set, even with a key', () => {
     expect(
@@ -108,5 +124,34 @@ describe('adminInitMode', () => {
 
   it('falls back to Application Default Credentials otherwise', () => {
     expect(adminInitMode({})).toBe('applicationDefault')
+  })
+})
+
+describe('resolveSiteUrl / isProductionSite (MCA-130)', () => {
+  const injected = (projectId: string) => ({ FIREBASE_WEBAPP_CONFIG: JSON.stringify({ projectId }) })
+
+  it('maps each foundation project to its public origin', () => {
+    expect(resolveSiteUrl(injected('mcarthur-web-prod'))).toBe('https://wtmcarthurhomeplace.org')
+    expect(resolveSiteUrl(injected('mcarthur-web-uat'))).toBe('https://uat.wtmcarthurhomeplace.org')
+    expect(resolveSiteUrl({ NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'mcarthur-web-dev' })).toBe('https://dev.wtmcarthurhomeplace.org')
+  })
+
+  it('lets NEXT_PUBLIC_SITE_URL override, without a trailing slash', () => {
+    expect(resolveSiteUrl({ ...injected('mcarthur-web-prod'), NEXT_PUBLIC_SITE_URL: 'https://preview.example.org/' })).toBe(
+      'https://preview.example.org',
+    )
+  })
+
+  it('falls back to localhost for unknown or missing projects (local, emulator, legacy)', () => {
+    expect(resolveSiteUrl({})).toBe('http://localhost:3000')
+    expect(resolveSiteUrl({ NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'demo-mcarthur' })).toBe('http://localhost:3000')
+    expect(resolveProjectId({ FIREBASE_CONFIG: JSON.stringify({ projectId: 'mcarthur-tour' }) })).toBe('mcarthur-tour')
+  })
+
+  it('treats only mcarthur-web-prod as production', () => {
+    expect(isProductionSite(injected('mcarthur-web-prod'))).toBe(true)
+    expect(isProductionSite(injected('mcarthur-web-uat'))).toBe(false)
+    expect(isProductionSite({ NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'mcarthur-tour' })).toBe(false)
+    expect(isProductionSite({})).toBe(false)
   })
 })

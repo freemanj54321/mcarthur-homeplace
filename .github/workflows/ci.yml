@@ -24,11 +24,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # WHY 24: matches the App Hosting runtime (Node 24), so CI builds with what
-  # the backends run.
-  NODE_VERSION: '24'
-
 jobs:
   check:
     name: Lint, type check, test, build
@@ -38,16 +33,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          # One Node major everywhere (MCA-64): .nvmrc here, `engines` in
+          # package.json for App Hosting's buildpack, and local nvm.
+          node-version-file: .nvmrc
           cache: 'npm'
 
-      # `npm install` (not `npm ci`): the dependency graph pulls in optional
-      # native/WASM bindings (unrs-resolver via eslint-config-next, Rolldown's
-      # wasm binding via Vitest) whose hoisted versions differ per-platform.
-      # npm's lockfile omits cross-platform optional deps, so `npm ci` fails on
-      # the Linux runner with a Windows-generated lock. `npm install` resolves
-      # for the runner platform and honors the committed lock where compatible.
-      - run: npm install
+      # `npm ci`: installs exactly the committed lock. The lock is generated on
+      # Linux now and records every platform's optional bindings (MCA-64); the
+      # old `npm install` workaround was for a Windows-generated lock.
+      - run: npm ci
 
       - uses: actions/cache@v4
         with:
@@ -91,7 +85,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          # One Node major everywhere (MCA-64): .nvmrc here, `engines` in
+          # package.json for App Hosting's buildpack, and local nvm.
+          node-version-file: .nvmrc
           cache: 'npm'
 
       # firebase-tools' emulators need Java 21+.
@@ -100,7 +96,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - run: npm install
+      - run: npm ci
 
       - name: Cache emulator binaries
         uses: actions/cache@v4
@@ -108,6 +104,11 @@ jobs:
           path: ~/.cache/firebase/emulators
           key: ${{ runner.os }}-firebase-emulators-${{ hashFiles('**/package-lock.json') }}
           restore-keys: ${{ runner.os }}-firebase-emulators-
+
+      # Executes firestore.rules + storage.rules on the emulators (MCA-149).
+      # Same job as E2E: it already has Java and the emulator binaries.
+      - name: Security rules
+        run: npm run test:rules
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
