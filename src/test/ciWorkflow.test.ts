@@ -41,8 +41,8 @@ describe('ci.yml', () => {
     expect(ci).toContain('name: E2E (emulator)')
   })
 
-  it('runs the same gate as AGENTS.md, plus build and E2E', () => {
-    for (const step of ['npm run lint', 'npx tsc --noEmit', 'npm run test:coverage', 'npm run build', 'npm run test:e2e']) {
+  it('runs the same gate as AGENTS.md, plus build, security rules and E2E', () => {
+    for (const step of ['npm run lint', 'npx tsc --noEmit', 'npm run test:coverage', 'npm run build', 'npm run test:rules', 'npm run test:e2e']) {
       expect(ci).toContain(`run: ${step}`)
     }
   })
