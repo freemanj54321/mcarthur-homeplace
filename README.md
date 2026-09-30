@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# W. T. McArthur Historic Homeplace — website
 
-## Getting Started
+Public website and editor CMS for the **W. T. McArthur Historic Homeplace, Inc.**, a nonprofit restoring a 19th-century farm. Next.js 16 (App Router) on Firebase: Firestore, Storage, Auth and App Hosting.
 
-First, run the development server:
+| Environment | Branch | URL |
+|---|---|---|
+| dev | `develop` | https://dev.wtmcarthurhomeplace.org |
+| uat | `uat` | https://uat.wtmcarthurhomeplace.org |
+| prod | `master` | https://wtmcarthurhomeplace.org |
+
+Each branch deploys automatically. Changes go **feature → `develop` → `uat` → `master`**, by pull request.
+
+## Start here
+
+- **[ONBOARDING.md](ONBOARDING.md)**: architecture, key decisions, data model, deployment and local setup. It mirrors the Notion **Project Overview**, which is canonical.
+- **[AGENTS.md](AGENTS.md)**: working rules for this repo: commands, definition of done, git and deploy flow, tests with every change.
+- **Notion → Documentation**: plans, design docs and runbooks (not kept in the repo).
+
+## Local development
+
+Needs **Node 24** (`.nvmrc`) and **npm**. Don't switch to pnpm or yarn, and never set `ignore-scripts`: the Firebase SDK's install script is part of how deployed builds get their config.
 
 ```bash
+nvm use
+npm ci
+cp .env.example .env.local   # then fill in; see comments in the file
+gcloud auth application-default login   # server-side access, no key files
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Editors sign in at `/admin` with a Google account on the editor allowlist.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Task | Command |
+|---|---|
+| Lint | `npm run lint` |
+| Type check | `npx tsc --noEmit` |
+| Unit tests + coverage gate | `npm run test:coverage` |
+| E2E (Firebase emulators, needs Java 21+) | `npm run test:e2e` |
+| Build | `npm run build` |
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+CI (`.github/workflows/ci.yml`) runs all of these on pull requests into `develop`, `uat` and `master`.
