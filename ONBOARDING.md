@@ -404,28 +404,20 @@ npm ci
 # 2. Enable auto-updating git hook
 git config core.hooksPath .githooks
 
-# 3. Create .env.local
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=mcarthur-tour
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=mcarthur-tour.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-NEXT_PUBLIC_FIREBASE_APP_ID=...
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=...
+# 3. Create .env.local from the template (every variable is explained there)
+cp .env.example .env.local
 
-# Optional: show the prototype donation flow (off unless "true"; decision 8):
-NEXT_PUBLIC_DONATIONS_ENABLED=true
+# 4. Server-side access without a key file (the foundation org blocks keys)
+gcloud auth application-default login
+gcloud auth application-default set-quota-project mcarthur-web-dev
 
-# Required for admin CMS (navigation, pages, auth verification):
-FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"mcarthur-tour",...}
-
-# 4. Run dev server
+# 5. Run dev server
 npm run dev
 ```
 
 > **Admin dashboard:** Visit `/admin` — sign in with a Google account that has been granted editor access in Firebase Auth.
 
-> **Without `FIREBASE_SERVICE_ACCOUNT_JSON`** (and without `gcloud auth application-default login`): the admin dashboard will throw. The public site will still work, but navigation will use hardcoded defaults from `src/lib/cms/navigation.ts`.
+> **Without credentials** (no `gcloud auth application-default login`, and no `FIREBASE_SERVICE_ACCOUNT_JSON`, which only the legacy `mcarthur-tour` project uses): the admin dashboard will throw. The public site will still work, but navigation will use hardcoded defaults from `src/lib/cms/navigation.ts`.
 
 > **Next.js 16:** Has breaking changes from prior versions. Read `node_modules/next/dist/docs/` before writing App Router code.
 
