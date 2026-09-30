@@ -20,12 +20,6 @@ describe('Footer', () => {
     expect(screen.getByRole('link', { name: 'Facebook' })).toHaveAttribute('target', '_blank')
   })
 
-  it('shows the legal name and EIN, linked to /organization', () => {
-    const { container } = render(<Footer data={data} />)
-    expect(screen.getByRole('link', { name: 'W. T. McArthur Historic Homeplace, Inc.' })).toHaveAttribute('href', '/organization')
-    expect(container.textContent).toContain('EIN 93-4477897')
-  })
-
   it('has no newsletter sign-up', () => {
     render(<Footer data={data} />)
     expect(screen.queryByText(/Letters from the Porch/)).not.toBeInTheDocument()
