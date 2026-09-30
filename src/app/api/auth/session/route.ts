@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { clearSession, mintSessionCookie } from '@/lib/auth/server'
+import { clearSession, isRecentSignIn, mintSessionCookie } from '@/lib/auth/server'
 import { adminAuth, adminDb } from '@/lib/firebase-admin'
 
 export const runtime = 'nodejs'
@@ -23,6 +23,10 @@ export async function POST(req: Request) {
     .catch(() => null)
   if (!decoded) {
     return NextResponse.json({ error: 'invalid token' }, { status: 401 })
+  }
+  // Only a fresh sign-in may become a 5-day session cookie (MCA-114).
+  if (!isRecentSignIn(decoded.auth_time)) {
+    return NextResponse.json({ error: 'sign-in too old; please sign in again' }, { status: 401 })
   }
   const editorDoc = await adminDb().doc(`editors/${decoded.uid}`).get()
   if (!editorDoc.exists) {
