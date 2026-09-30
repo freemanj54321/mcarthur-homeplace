@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { clearSession, isRecentSignIn, mintSessionCookie } from '@/lib/auth/server'
 import { adminAuth, adminDb } from '@/lib/firebase-admin'
+import { logFallback } from '@/lib/log'
 
 export const runtime = 'nodejs'
 
@@ -20,7 +21,12 @@ export async function POST(req: Request) {
   }
   const decoded = await adminAuth()
     .verifyIdToken(parsed.data.idToken)
-    .catch(() => null)
+    .catch((err) => {
+      // Usually a bad or expired token, but also how missing server
+      // credentials show up; the log tells them apart (MCA-32).
+      logFallback('auth.verifyIdToken', err)
+      return null
+    })
   if (!decoded) {
     return NextResponse.json({ error: 'invalid token' }, { status: 401 })
   }

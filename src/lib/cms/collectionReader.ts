@@ -10,6 +10,7 @@
 import type { z } from 'zod'
 import type { Status, StoredDoc, PublicDoc } from '@/lib/content-schema'
 import type { FirestoreReaderAccessor, ReadDocData } from './firestoreReader'
+import { logFallback } from '@/lib/log'
 
 /**
  * Firestore `Timestamp` duck-type. WHY not `instanceof Timestamp`: that would
@@ -93,14 +94,14 @@ export function createCollectionReader<TInput extends Record<string, unknown>>(
    * All docs, sorted — admin view with full envelope. Returns [] when the
    * backing Firestore is unavailable (e.g. a local build with no service
    * account), so prerender and ISR stay resilient rather than hard-failing.
-   *
-   * TODO(MCA-32): swallowing here is silent; replace with a logged fallback.
+   * The failure is logged (MCA-32).
    */
   async function list(): Promise<StoredDoc<TInput>[]> {
     try {
       const snap = await col().get()
       return snap.docs.map((d) => toStored(d.id, d.data() ?? {})).sort(compare)
-    } catch {
+    } catch (err) {
+      logFallback(`${collection}.list`, err)
       return []
     }
   }
@@ -110,8 +111,8 @@ export function createCollectionReader<TInput extends Record<string, unknown>>(
       const snap = await col().doc(id).get()
       if (!snap.exists) return null
       return toStored(snap.id, snap.data() ?? {})
-    } catch {
-      // TODO(MCA-32): log instead of swallowing.
+    } catch (err) {
+      logFallback(`${collection}.getById`, err, { id })
       return null
     }
   }
@@ -123,8 +124,8 @@ export function createCollectionReader<TInput extends Record<string, unknown>>(
       const snap = await col().where(field, '==', slug).get()
       const [first] = snap.docs
       return first ? toStored(first.id, first.data() ?? {}) : null
-    } catch {
-      // TODO(MCA-32): log instead of swallowing.
+    } catch (err) {
+      logFallback(`${collection}.getBySlug`, err, { slug })
       return null
     }
   }
@@ -143,8 +144,8 @@ export function createCollectionReader<TInput extends Record<string, unknown>>(
         .map((d) => toStored(d.id, d.data() ?? {}))
         .find((d) => d.status === 'published')
       return match ? publicView(match) : null
-    } catch {
-      // TODO(MCA-32): log instead of swallowing.
+    } catch (err) {
+      logFallback(`${collection}.getPublishedBySlug`, err, { slug })
       return null
     }
   }

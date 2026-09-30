@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { z } from 'zod'
 
@@ -233,11 +233,25 @@ describe('createCollectionReader', () => {
     const r = createCollectionReader<Input>({ collection: COL, schema, slugField: 'slug', db: () => broken })
 
     it('degrades to empty/null instead of throwing, so prerender survives', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
       expect(await r.list()).toEqual([])
       expect(await r.listPublished()).toEqual([])
       expect(await r.getById('a')).toBeNull()
       expect(await r.getBySlug('a')).toBeNull()
       expect(await r.getPublishedBySlug('a')).toBeNull()
+      warn.mockRestore()
+    })
+
+    it('logs every fallback instead of swallowing it (MCA-32)', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      await r.list()
+      await r.getById('a')
+      await r.getBySlug('a')
+      await r.getPublishedBySlug('a')
+      const scopes = warn.mock.calls.map((c) => JSON.parse(c[0] as string).scope)
+      expect(scopes).toEqual([`${COL}.list`, `${COL}.getById`, `${COL}.getBySlug`, `${COL}.getPublishedBySlug`])
+      expect(JSON.parse(warn.mock.calls[0][0] as string)).toMatchObject({ severity: 'WARNING', error: 'no credentials' })
+      warn.mockRestore()
     })
   })
 })
