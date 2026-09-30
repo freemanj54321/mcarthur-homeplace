@@ -73,11 +73,14 @@ export default defineConfig({
       // Raised 2026-09-30 by MCA-32 (logged fallbacks + failure-path tests).
       // Actuals then: 96.21 lines / 98.26 functions / 95.77 statements /
       // 89.9 branches.
+      // Raised 2026-09-30 by MCA-130 (site URL / robots / sitemap tests).
+      // Actuals then: 96.25 lines / 98.29 functions / 95.81 statements /
+      // 90.13 branches.
       thresholds: {
         lines: 95,
         functions: 97,
         statements: 94,
-        branches: 88,
+        branches: 89,
       },
     },
     projects: [

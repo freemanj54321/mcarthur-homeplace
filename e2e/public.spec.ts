@@ -47,6 +47,24 @@ test.describe('public site', () => {
     const response = await page.goto('/what-to-see/no-such-place')
     expect(response?.status()).toBe(404)
   })
+
+  test('missing pages show the branded 404 inside the site shell (MCA-130)', async ({ page }) => {
+    const response = await page.goto('/no-such-page-at-all')
+    expect(response?.status()).toBe(404)
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('leads nowhere')
+    await expect(page).toHaveTitle(/^Page not found/)
+    await expect(page.getByRole('banner')).toBeVisible()
+  })
+
+  test('robots.txt and sitemap.xml are served (MCA-130)', async ({ request }) => {
+    // E2E runs on the emulator project, i.e. not prod: crawling is blocked.
+    const robots = await request.get('/robots.txt')
+    expect(robots.ok()).toBeTruthy()
+    expect(await robots.text()).toContain('Disallow: /')
+    const sitemap = await request.get('/sitemap.xml')
+    expect(sitemap.ok()).toBeTruthy()
+    expect(await sitemap.text()).toContain(`/what-to-see/${SEED.publishedProject.slug}</loc>`)
+  })
 })
 
 test.describe('donate form (prototype, no real payment)', () => {

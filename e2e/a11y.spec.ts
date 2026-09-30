@@ -24,7 +24,7 @@ for (const path of PAGES) {
     await page.goto(path)
     // Scan the app's document, not a dev-server interstitial: under parallel
     // load `next dev` may still be compiling the route when goto() returns.
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en', { timeout: 30_000 })
     await page.waitForLoadState('networkidle')
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await testInfo.attach('axe-results', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
