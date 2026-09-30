@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { BrandMark } from './BrandMark'
 import type { ResolvedFooterNav } from '@/lib/content-schema'
+import { ORGANIZATION } from '@/lib/organization'
 
 function externalProps(kind: 'internal' | 'external') {
   return kind === 'external' ? { target: '_blank', rel: 'noopener noreferrer' } : {}
@@ -37,7 +38,11 @@ export function Footer({ data }: { data: ResolvedFooterNav }) {
               there is no newsletter, and the form sent nothing anywhere. */}
         </div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} W.T. McArthur Historic Homeplace Foundation. A 501(c)(3) nonprofit.</span>
+          {/* Legal name + EIN, linked to /organization, so verifiers can match
+              the site to the legal entity (Google for Nonprofits). */}
+          <span>
+            © {new Date().getFullYear()} <Link href="/organization">{ORGANIZATION.legalName}</Link>, a {ORGANIZATION.taxStatus}. EIN {ORGANIZATION.ein}.
+          </span>
           <div style={{ display: 'flex', gap: 24 }}>
             {data.bottomLinks.map((l) => (
               <Link key={l.id} href={l.href} {...externalProps(l.kind)}>{l.label}</Link>
