@@ -232,7 +232,7 @@ This split is deliberate: it is the single source of truth for content shape, so
 
 ### 7. Composite indexes are declared in the repo
 
-`firestore.indexes.json` declares the composite indexes the photo queries require (`project + order`, `featured + order`). They must be deployed to every environment. **A missing index fails silently** — the photo queries catch errors and return `[]`, so galleries render blank while the page still loads fine. `src/test/firestoreIndexes.test.ts` guards against accidental removal.
+`firestore.indexes.json` declares the composite indexes the photo queries require (`project + order`, `featured + order`). They must be deployed to every environment. **A missing index doesn't break the page** — the photo queries catch errors and return `[]`, so galleries render blank while the page still loads. Since MCA-32 each fallback writes a structured `WARNING` log (`src/lib/log.ts`, scope e.g. `photos.listByProject`), so it shows up in Cloud Logging instead of passing silently. `src/test/firestoreIndexes.test.ts` guards against accidental removal.
 
 ### 8. Donations are feature-flagged per environment (MCA-71)
 

@@ -6,6 +6,7 @@ import { SectionsRenderer } from '@/components/cms/PageRenderer'
 import { milestonesStore } from '@/lib/cms/milestones'
 import { boardStore } from '@/lib/cms/board'
 import { partnersStore } from '@/lib/cms/partners'
+import { logFallback } from '@/lib/log'
 
 export const revalidate = 60
 
@@ -13,7 +14,10 @@ export const metadata = { title: 'Our Story — W.T. McArthur Historic Homeplace
 
 export default async function AboutPage() {
   const [page, milestones, board, partners] = await Promise.all([
-    getPublishedPage('about').catch(() => null),
+    getPublishedPage('about').catch((err) => {
+      logFallback('pages.about', err)
+      return null
+    }),
     milestonesStore.listPublished(),
     boardStore.listPublished(),
     partnersStore.listPublished(),

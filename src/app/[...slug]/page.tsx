@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getPublishedPage, listPublishedSlugs } from '@/lib/cms/pages'
 import { PageRenderer } from '@/components/cms/PageRenderer'
+import { logFallback } from '@/lib/log'
 
 export const revalidate = 60
 
@@ -10,7 +11,9 @@ export async function generateStaticParams(): Promise<{ slug: string[] }[]> {
   try {
     const slugs = await listPublishedSlugs()
     return slugs.map((s) => ({ slug: s.split('/') }))
-  } catch {
+  } catch (err) {
+    // No prerendered pages; they still render on demand.
+    logFallback('pages.staticParams', err)
     return []
   }
 }

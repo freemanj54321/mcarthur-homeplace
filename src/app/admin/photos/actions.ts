@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { requireEditor } from '@/lib/auth/server'
 import { fmtError } from '@/lib/cms/action-error'
 import { adminStorage } from '@/lib/firebase-admin'
+import { logFallback } from '@/lib/log'
 import { PhotoInput } from '@/lib/content-schema'
 import { createPhoto, updatePhoto, deletePhoto, swapPhotoOrder } from '@/lib/cms/photosAdmin'
 
@@ -50,8 +51,9 @@ export async function deletePhotoAction(id: string): Promise<Result> {
     if (storagePath) {
       try {
         await adminStorage().bucket().file(storagePath).delete()
-      } catch {
-        // Storage object may already be absent — don't fail the whole action
+      } catch (err) {
+        // The object may already be gone; the photo doc is deleted either way.
+        logFallback('photos.deleteStorageObject', err, { id, storagePath })
       }
     }
     revalidateAll()

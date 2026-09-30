@@ -70,8 +70,11 @@ export default defineConfig({
       // Raised 2026-09-30 by MCA-114 (first tests for lib/auth: server, client,
       // session route). Actuals then: 95.94 lines / 98.24 functions /
       // 95.52 statements / 89.42 branches.
+      // Raised 2026-09-30 by MCA-32 (logged fallbacks + failure-path tests).
+      // Actuals then: 96.21 lines / 98.26 functions / 95.77 statements /
+      // 89.9 branches.
       thresholds: {
-        lines: 94,
+        lines: 95,
         functions: 97,
         statements: 94,
         branches: 88,

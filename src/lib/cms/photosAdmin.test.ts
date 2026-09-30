@@ -116,3 +116,25 @@ describe('swapPhotoOrder', () => {
     expect((await raw('a'))?.order).toBe(1)
   })
 })
+
+describe('when Firestore fails (e.g. a missing composite index)', () => {
+  it('serves empty/null fallbacks and logs each one (MCA-32)', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    vi.spyOn(getMockDb(), 'collection').mockImplementation(() => {
+      throw Object.assign(new Error('The query requires an index.'), { code: 9 })
+    })
+    expect(await listPhotos()).toEqual([])
+    expect(await getPhotoById('x')).toBeNull()
+    expect(await listPhotosByProject('main-house')).toEqual([])
+    expect(await listFeaturedPhotos()).toEqual([])
+    const logs = warn.mock.calls.map((c) => JSON.parse(c[0] as string))
+    expect(logs.map((l) => l.scope)).toEqual([
+      'photos.list',
+      'photos.getById',
+      'photos.listByProject',
+      'photos.listFeatured',
+    ])
+    expect(logs[2]).toMatchObject({ slug: 'main-house', error: 'The query requires an index. [9]' })
+    vi.restoreAllMocks()
+  })
+})

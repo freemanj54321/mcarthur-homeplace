@@ -35,10 +35,16 @@ describe('POST /api/auth/session', () => {
     expect((await post({})).status).toBe(400)
   })
 
-  it('401s on an invalid ID token', async () => {
+  it('401s on an invalid ID token and logs why (MCA-32)', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     getMockAuth().verifyIdToken.mockRejectedValue(new Error('auth/argument-error'))
     expect((await post({ idToken: 'forged-token-xyz' })).status).toBe(401)
     expect(jar.has('__session')).toBe(false)
+    expect(JSON.parse(warn.mock.calls[0][0] as string)).toMatchObject({
+      scope: 'auth.verifyIdToken',
+      error: 'auth/argument-error',
+    })
+    warn.mockRestore()
   })
 
   it('401s when the sign-in is older than the allowed window', async () => {
