@@ -230,7 +230,7 @@ The `What to See` nav item expands its dropdown from the published `projects` Fi
 
 `src/lib/content-schema/` holds every Zod schema, inferred type, and the `StoredDoc`/`PublicDoc` envelope, with **zero Firebase / Next.js / React imports** — only `zod` and `isomorphic-dompurify`. `src/lib/cms/` keeps the Firebase-bound data access on top of it.
 
-This split is deliberate: it is the single source of truth for content shape, so a planned content API and a future mobile app can consume the same contract without pulling in Firebase. `CONTENT_SCHEMA_VERSION` exists so the contract can be versioned independently of the site.
+This split is deliberate: it is the single source of truth for content shape, so a planned content API and a future mobile app can consume the same contract without pulling in Firebase. `CONTENT_SCHEMA_VERSION` exists so the contract can be versioned independently of the site, and it's enforced: `contract.snapshot.json` holds every schema's JSON Schema, and a test fails when the shapes change until the version is bumped (major for breaking, minor for additive) and `npm run contract:snapshot` is run (MCA-136).
 
 ### 7. Composite indexes are declared in the repo
 
