@@ -64,11 +64,14 @@ export default defineConfig({
       // Raised 2026-09-29 by MCA-115 (admin server actions + registry added to
       // the gate, with tests). Actuals then: 90.61 lines / 94.93 functions /
       // 90.4 statements / 85.45 branches.
+      // Raised 2026-09-30 by MCA-29 (seed-editor argument checks + tests).
+      // Actuals then: 90.63 lines / 94.11 functions / 90.47 statements /
+      // 86.19 branches.
       thresholds: {
         lines: 89,
         functions: 93,
         statements: 89,
-        branches: 84,
+        branches: 85,
       },
     },
     projects: [
