@@ -1,4 +1,4 @@
-import { sanitizeHtml } from '@/lib/cms/sanitize'
+import { sanitizeHtml } from '@/lib/content-schema'
 
 interface SectionHeadProps {
   eyebrow?: string
