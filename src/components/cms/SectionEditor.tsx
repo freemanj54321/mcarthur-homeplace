@@ -166,16 +166,18 @@ export function SectionEditor({ page }: Props) {
       {message && !error && <div className="admin-hint">{message}</div>}
 
       <div className="admin-card">
-        <label className="admin-label">Title</label>
+        <label className="admin-label" htmlFor="page-title">Title</label>
         <input
+          id="page-title"
           className="admin-input"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Page title"
         />
 
-        <label className="admin-label" style={{ marginTop: 16 }}>Slug (URL path)</label>
+        <label className="admin-label" style={{ marginTop: 16 }} htmlFor="page-slug">Slug (URL path)</label>
         <input
+          id="page-slug"
           className="admin-input"
           value={slug}
           onChange={(e) => setSlug(e.target.value.toLowerCase())}
@@ -267,13 +269,14 @@ function SectionFields({
 }) {
   switch (section.type) {
     case 'richText':
-      return <RichTextField value={section.html} onChange={(html) => onChange({ html } as Partial<Section>)} />
+      return <RichTextField label="Rich text" value={section.html} onChange={(html) => onChange({ html } as Partial<Section>)} />
     case 'quote':
       return (
         <div>
-          <RichTextField value={section.html} onChange={(html) => onChange({ html } as Partial<Section>)} />
-          <label className="admin-label" style={{ marginTop: 12 }}>Attribution (optional)</label>
+          <RichTextField label="Quote" value={section.html} onChange={(html) => onChange({ html } as Partial<Section>)} />
+          <label className="admin-label" style={{ marginTop: 12 }} htmlFor={`${section.id}-attribution`}>Attribution (optional)</label>
           <input
+            id={`${section.id}-attribution`}
             className="admin-input"
             value={section.attribution ?? ''}
             onChange={(e) => onChange({ attribution: e.target.value } as Partial<Section>)}
@@ -283,8 +286,9 @@ function SectionFields({
     case 'callout':
       return (
         <div>
-          <label className="admin-label">Tone</label>
+          <label className="admin-label" htmlFor={`${section.id}-tone`}>Tone</label>
           <select
+            id={`${section.id}-tone`}
             className="admin-input"
             value={section.tone}
             onChange={(e) => onChange({ tone: e.target.value as 'info' | 'donate' } as Partial<Section>)}
@@ -293,7 +297,7 @@ function SectionFields({
             <option value="donate">Donate</option>
           </select>
           <div style={{ marginTop: 12 }}>
-            <RichTextField value={section.html} onChange={(html) => onChange({ html } as Partial<Section>)} />
+            <RichTextField label="Callout text" value={section.html} onChange={(html) => onChange({ html } as Partial<Section>)} />
           </div>
         </div>
       )
@@ -301,12 +305,12 @@ function SectionFields({
       return (
         <div className="cms-twocol">
           <div>
-            <label className="admin-label">Left column</label>
-            <RichTextField value={section.leftHtml} onChange={(html) => onChange({ leftHtml: html } as Partial<Section>)} />
+            <div className="admin-label">Left column</div>
+            <RichTextField label="Left column" value={section.leftHtml} onChange={(html) => onChange({ leftHtml: html } as Partial<Section>)} />
           </div>
           <div>
-            <label className="admin-label">Right column</label>
-            <RichTextField value={section.rightHtml} onChange={(html) => onChange({ rightHtml: html } as Partial<Section>)} />
+            <div className="admin-label">Right column</div>
+            <RichTextField label="Right column" value={section.rightHtml} onChange={(html) => onChange({ rightHtml: html } as Partial<Section>)} />
           </div>
         </div>
       )
@@ -326,8 +330,9 @@ function SectionFields({
               }
             }}
           />
-          <label className="admin-label" style={{ marginTop: 12 }}>Caption (optional)</label>
+          <label className="admin-label" style={{ marginTop: 12 }} htmlFor={`${section.id}-caption`}>Caption (optional)</label>
           <input
+            id={`${section.id}-caption`}
             className="admin-input"
             value={section.caption ?? ''}
             onChange={(e) => onChange({ caption: e.target.value } as Partial<Section>)}

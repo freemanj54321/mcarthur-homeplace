@@ -126,6 +126,9 @@ export function TweaksPanel() {
     <>
       <style>{STYLE}</style>
       <div ref={dragRef} className="twk-panel">
+        {/* Mouse-only drag handle of the temporary dev/uat design tool (hidden on
+            prod, removed with MCA-24); the close button stays keyboard-usable. */}
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
         <div className="twk-hd" onMouseDown={onDragStart}>
           <b>Design Options</b>
           <button className="twk-x" aria-label="Close" onMouseDown={(e) => e.stopPropagation()} onClick={dismiss}>✕</button>
