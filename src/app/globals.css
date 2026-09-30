@@ -27,6 +27,9 @@
   --tartan-green:    #1F4A2E;
   --tartan-parch:    #F4EDE0;
   --tartan-gold:     #D4A017;
+  /* Gold for TEXT on tartan green: #D4A017 there is 4.26:1, just under WCAG
+     AA 4.5:1; this lighter gold (the dark-mode accent) is 5.73:1 (MCA-150). */
+  --tartan-gold-on-dark: #E8BE4A;
   --tartan-navy:     #1B2A4E;
   --tartan-ink:      #14110D;
   --tartan-oat:      #E4E0D2;
@@ -303,7 +306,9 @@ main.page { flex: 1 0 auto; }
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 700;
-  color: var(--c-primary-ink);
+  /* Ink, not white: white on tartan gold is 2.4:1, below WCAG AA's 4.5:1 for
+     small text; ink is 7.9:1, as on the site's other gold buttons (MCA-150). */
+  color: var(--tartan-ink);
   background: var(--c-accent);
   padding: 6px 16px;
   transition: filter 0.2s;
@@ -520,18 +525,19 @@ main.page { flex: 1 0 auto; }
   font-weight: 500;
   font-size: 18px;
   margin-bottom: 18px;
-  color: var(--tartan-gold);
+  color: var(--tartan-gold-on-dark);
 }
 .footer ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
 .footer a { font-size: 14px; color: rgba(251, 247, 238, 0.78); transition: color 0.2s; }
-.footer a:hover { color: var(--tartan-gold); }
+.footer a:hover { color: var(--tartan-gold-on-dark); }
 .footer-bottom {
   margin-top: 56px;
   padding-top: 24px;
   border-top: 1px solid rgba(251, 247, 238, 0.15);
   display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
   font-size: 12px;
-  color: rgba(251, 247, 238, 0.55);
+  /* 0.78 like the footer links: 0.55 on green was 4.07:1, below AA (MCA-150). */
+  color: rgba(251, 247, 238, 0.78);
 }
 .footer-mark {
   display: flex; gap: 14px; align-items: center;

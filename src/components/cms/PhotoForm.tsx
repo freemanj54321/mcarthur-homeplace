@@ -99,8 +99,9 @@ export function PhotoForm({
           />
 
           <div>
-            <label className="admin-label">Caption</label>
+            <label className="admin-label" htmlFor="photo-caption">Caption</label>
             <input
+              id="photo-caption"
               className="admin-input"
               value={caption}
               placeholder="Short descriptive caption"
@@ -109,8 +110,9 @@ export function PhotoForm({
           </div>
 
           <div>
-            <label className="admin-label">Property</label>
+            <label className="admin-label" htmlFor="photo-property">Property</label>
             <select
+              id="photo-property"
               className="admin-input"
               value={project}
               onChange={(e) => setProject(e.target.value)}
@@ -123,8 +125,9 @@ export function PhotoForm({
           </div>
 
           <div>
-            <label className="admin-label">Category</label>
+            <label className="admin-label" htmlFor="photo-category">Category</label>
             <select
+              id="photo-category"
               className="admin-input"
               value={category}
               onChange={(e) => setCategory(e.target.value as PhotoCategory)}
@@ -136,8 +139,9 @@ export function PhotoForm({
           </div>
 
           <div>
-            <label className="admin-label">Date taken</label>
+            <label className="admin-label" htmlFor="photo-date-taken">Date taken</label>
             <input
+              id="photo-date-taken"
               className="admin-input"
               type="date"
               value={dateTaken}
@@ -146,8 +150,9 @@ export function PhotoForm({
           </div>
 
           <div>
-            <label className="admin-label">Order</label>
+            <label className="admin-label" htmlFor="photo-order">Order</label>
             <input
+              id="photo-order"
               className="admin-input"
               type="number"
               value={order}

@@ -64,10 +64,10 @@ function StepAmount({ amount, setAmount, custom, setCustom, frequency, setFreque
         ))}
       </div>
       <div style={{ marginTop: 18 }}>
-        <label className="dateline" style={{ display: 'block', marginBottom: 10 }}>Or enter your own</label>
+        <label className="dateline" style={{ display: 'block', marginBottom: 10 }} htmlFor="donate-custom-amount">Or enter your own</label>
         <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1.5px solid var(--c-text)', paddingBottom: 8 }}>
           <span style={{ fontSize: 28, fontFamily: 'var(--f-display)' }}>$</span>
-          <input type="number" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="0" style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 28, fontFamily: 'var(--f-display)', fontVariantNumeric: 'tabular-nums', padding: '4px 8px', color: 'var(--c-text)' }} />
+          <input id="donate-custom-amount" type="number" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="0" style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 28, fontFamily: 'var(--f-display)', fontVariantNumeric: 'tabular-nums', padding: '4px 8px', color: 'var(--c-text)' }} />
         </div>
       </div>
       {(() => {
