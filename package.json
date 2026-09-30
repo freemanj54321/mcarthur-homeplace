@@ -16,6 +16,7 @@
     "test:e2e": "firebase emulators:exec --project demo-mcarthur --only auth,firestore,storage \"node scripts/seed-emulator.mjs && playwright test\"",
     "test:e2e:ui": "firebase emulators:exec --project demo-mcarthur --only auth,firestore,storage \"node scripts/seed-emulator.mjs && playwright test --ui\"",
     "migrate:content": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/migrate-content.mjs",
+    "seed:editor": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed-editor.mjs",
     "emulators": "firebase emulators:start --project demo-mcarthur --only auth,firestore,storage"
   },
   "dependencies": {

@@ -120,7 +120,7 @@ src/
 └── test/                          # Vitest harness: in-memory Firestore + firebase-admin mock
 
 e2e/                               # Playwright specs (run against the Firebase Emulator Suite)
-scripts/                           # seed-editor / seed-pages / seed-structured / seed-emulator; migrate-content (MCA-47)
+scripts/                           # seed-editor (keyless, `npm run seed:editor`), seed-emulator (E2E), migrate-content (MCA-47)
 src/proxy.ts                       # /admin login redirect keeping ?next= (Next 16 `proxy`, MCA-61)
 firestore.indexes.json             # Composite index declarations (deployed per environment)
 playwright.config.ts               # E2E config — emulator-backed, project `demo-mcarthur`
