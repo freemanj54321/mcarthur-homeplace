@@ -9,7 +9,22 @@ import {
   resolveProjectId,
   resolveSiteUrl,
   isProductionSite,
+  canonicalHostRedirects,
 } from './firebaseConfig'
+
+// MCA-130: www must redirect permanently to the apex (one canonical host).
+describe('canonicalHostRedirects', () => {
+  it('sends every www path to the apex, permanently', () => {
+    expect(canonicalHostRedirects()).toEqual([
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.wtmcarthurhomeplace.org' }],
+        destination: 'https://wtmcarthurhomeplace.org/:path*',
+        permanent: true,
+      },
+    ])
+  })
+})
 
 const webappConfig = JSON.stringify({
   apiKey: 'injected-key',
