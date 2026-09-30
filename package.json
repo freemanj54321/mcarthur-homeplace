@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "contract:snapshot": "UPDATE_CONTRACT_SNAPSHOT=1 vitest run src/lib/content-schema/contract.test.ts",
     "test:e2e": "firebase emulators:exec --project demo-mcarthur --only auth,firestore,storage \"node scripts/seed-emulator.mjs && playwright test\"",
     "test:e2e:ui": "firebase emulators:exec --project demo-mcarthur --only auth,firestore,storage \"node scripts/seed-emulator.mjs && playwright test --ui\"",
     "migrate:content": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/migrate-content.mjs",
