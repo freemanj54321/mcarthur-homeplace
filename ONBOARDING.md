@@ -60,6 +60,8 @@ src/
 │   ├── visit/page.tsx
 │   ├── donate/page.tsx            # 404 unless donations are enabled (decision 8)
 │   ├── [...slug]/page.tsx         # Published CMS pages by slug (e.g. /stories)
+│   ├── not-found.tsx / error.tsx  # Branded 404 and error pages (MCA-130)
+│   ├── sitemap.ts / robots.ts     # From published content; only prod is indexable (MCA-130)
 │   ├── api/auth/session/          # Mint / clear the __session cookie
 │   └── admin/                     # Auth-gated CMS dashboard
 │       ├── layout.tsx             # Requires active session; redirects to /admin/login
